@@ -89,7 +89,7 @@ export default function PartnerDetail() {
                     )}
                   </div>
                 </div>
-                <Link href={`/quote-request?partner=${partner.id}`}>
+                <Link href={`/quote-request?type=designated&partner=${partner.id}`}>
                   <Button className="gap-2 shrink-0">
                     <FileText className="w-4 h-4" />
                     지정 견적 요청

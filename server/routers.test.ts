@@ -159,6 +159,18 @@ describe("quotes - access control", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(caller.quotes.myQuotes()).rejects.toThrow();
   });
+
+  it("rejects unauthenticated from creating designated quotes", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.quotes.create({
+        type: "designated",
+        title: "Designated Quote Test",
+        designatedPartnerId: 1,
+      })
+    ).rejects.toThrow();
+  });
 });
 
 describe("settings", () => {

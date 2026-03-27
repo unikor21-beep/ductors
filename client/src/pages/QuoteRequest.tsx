@@ -11,17 +11,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { FileText, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { REGIONS } from "@shared/constants";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation, useSearch } from "wouter";
+import { FileText, ArrowRight, ArrowLeft, CheckCircle2, Building2, Star, Award } from "lucide-react";
+import { REGIONS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 export default function QuoteRequest() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
+  const searchString = useSearch();
+
+  // Parse URL params: ?type=designated&partner=123
+  const urlParams = useMemo(() => new URLSearchParams(searchString), [searchString]);
+  const urlPartnerId = useMemo(() => {
+    const p = urlParams.get("partner");
+    return p ? Number(p) : null;
+  }, [urlParams]);
+  const urlType = useMemo(() => {
+    const t = urlParams.get("type");
+    return t === "designated" ? "designated" : null;
+  }, [urlParams]);
+
   const [step, setStep] = useState(1);
-  const [quoteType, setQuoteType] = useState<"public" | "designated">("public");
+  const [quoteType, setQuoteType] = useState<"public" | "designated">(
+    urlType === "designated" || urlPartnerId ? "designated" : "public"
+  );
+  const [designatedPartnerId, setDesignatedPartnerId] = useState<number | null>(urlPartnerId);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [region, setRegion] = useState("");
   const [title, setTitle] = useState("");
@@ -29,6 +46,12 @@ export default function QuoteRequest() {
   const [address, setAddress] = useState("");
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [submitted, setSubmitted] = useState(false);
+
+  // Fetch designated partner info if partnerId is provided
+  const { data: designatedPartner } = trpc.partners.getById.useQuery(
+    { id: designatedPartnerId! },
+    { enabled: !!designatedPartnerId }
+  );
 
   const { data: categories } = trpc.categories.list.useQuery();
   const { data: fields } = trpc.categories.fields.useQuery(
@@ -60,7 +83,11 @@ export default function QuoteRequest() {
           <div className="text-center max-w-md mx-auto px-4">
             <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
             <h2 className="text-2xl font-bold mb-3">견적 요청 완료!</h2>
-            <p className="text-muted-foreground mb-8">파트너들이 견적을 검토 후 제출할 예정입니다.</p>
+            <p className="text-muted-foreground mb-8">
+              {quoteType === "designated" && designatedPartner
+                ? `${designatedPartner.companyName}에 지정 견적을 요청했습니다.`
+                : "파트너들이 견적을 검토 후 제출할 예정입니다."}
+            </p>
             <div className="flex gap-3 justify-center">
               <Button onClick={() => navigate("/mypage")} variant="outline">내 견적 확인</Button>
               <Button onClick={() => navigate("/")}>홈으로</Button>
@@ -83,6 +110,7 @@ export default function QuoteRequest() {
       region,
       address,
       formData,
+      designatedPartnerId: quoteType === "designated" ? designatedPartnerId || undefined : undefined,
     });
   };
 
@@ -109,15 +137,18 @@ export default function QuoteRequest() {
                 <CardTitle className="text-lg">견적 유형 선택</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <RadioGroup value={quoteType} onValueChange={(v) => setQuoteType(v as "public" | "designated")}>
-                  <div className="flex items-start gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/30 transition-colors">
+                <RadioGroup value={quoteType} onValueChange={(v) => {
+                  setQuoteType(v as "public" | "designated");
+                  if (v === "public") setDesignatedPartnerId(null);
+                }}>
+                  <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${quoteType === "public" ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-primary/30"}`}>
                     <RadioGroupItem value="public" id="public" className="mt-1" />
                     <div>
                       <Label htmlFor="public" className="text-base font-medium cursor-pointer">공개 견적</Label>
                       <p className="text-sm text-muted-foreground mt-1">여러 파트너에게 견적을 받아 비교할 수 있습니다</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/30 transition-colors">
+                  <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${quoteType === "designated" ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-primary/30"}`}>
                     <RadioGroupItem value="designated" id="designated" className="mt-1" />
                     <div>
                       <Label htmlFor="designated" className="text-base font-medium cursor-pointer">지정 견적</Label>
@@ -125,6 +156,54 @@ export default function QuoteRequest() {
                     </div>
                   </div>
                 </RadioGroup>
+
+                {/* Designated Partner Info Card */}
+                {quoteType === "designated" && designatedPartner && (
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+                    <p className="text-xs font-medium text-primary mb-3">지정 파트너</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        {designatedPartner.logoUrl ? (
+                          <img src={designatedPartner.logoUrl} alt="" className="w-full h-full rounded-xl object-cover" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground truncate">{designatedPartner.companyName}</span>
+                          <Badge
+                            className="text-[10px] px-1.5 py-0 shrink-0"
+                            style={{
+                              backgroundColor: GRADE_COLORS[designatedPartner.grade || "bronze"] + "20",
+                              color: GRADE_COLORS[designatedPartner.grade || "bronze"],
+                            }}
+                          >
+                            <Award className="w-2.5 h-2.5 mr-0.5" />
+                            {GRADE_LABELS[designatedPartner.grade || "bronze"]}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs text-muted-foreground">
+                            {Number(designatedPartner.avgRating || 0).toFixed(1)} ({designatedPartner.reviewCount || 0}건)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Prompt to select partner if designated but no partner selected */}
+                {quoteType === "designated" && !designatedPartnerId && (
+                  <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-center">
+                    <p className="text-sm text-amber-700 mb-3">지정할 파트너를 선택해주세요</p>
+                    <Button variant="outline" size="sm" onClick={() => navigate("/find-partner")} className="gap-2">
+                      <Building2 className="w-4 h-4" />
+                      파트너 찾기에서 선택
+                    </Button>
+                  </div>
+                )}
 
                 <div>
                   <Label className="text-sm font-medium mb-2 block">카테고리</Label>
@@ -138,7 +217,11 @@ export default function QuoteRequest() {
                   </Select>
                 </div>
 
-                <Button onClick={() => setStep(2)} className="w-full gap-2">
+                <Button
+                  onClick={() => setStep(2)}
+                  className="w-full gap-2"
+                  disabled={quoteType === "designated" && !designatedPartnerId}
+                >
                   다음 <ArrowRight className="w-4 h-4" />
                 </Button>
               </CardContent>
@@ -249,6 +332,12 @@ export default function QuoteRequest() {
                     <span className="text-muted-foreground">견적 유형</span>
                     <span className="font-medium">{quoteType === "public" ? "공개 견적" : "지정 견적"}</span>
                   </div>
+                  {quoteType === "designated" && designatedPartner && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">지정 파트너</span>
+                      <span className="font-medium">{designatedPartner.companyName}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">제목</span>
                     <span className="font-medium">{title}</span>
