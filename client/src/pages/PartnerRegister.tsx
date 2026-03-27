@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,9 +42,9 @@ export default function PartnerRegister() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      window.location.href = getLoginUrl();
+      navigate("/signup");
     }
-  }, [loading, isAuthenticated]);
+  }, [loading, isAuthenticated, navigate]);
 
   if (loading) return null;
   if (!isAuthenticated) return null;
