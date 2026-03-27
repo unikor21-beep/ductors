@@ -18,6 +18,8 @@ const PartnerRegister = lazy(() => import("./pages/PartnerRegister"));
 const MyPage = lazy(() => import("./pages/MyPage"));
 const PartnerDashboard = lazy(() => import("./pages/PartnerDashboard"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
 
 function LoadingFallback() {
   return (
@@ -43,6 +45,8 @@ function Router() {
         <Route path="/dashboard/:tab" component={PartnerDashboard} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin/:tab" component={AdminDashboard} />
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

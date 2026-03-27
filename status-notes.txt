@@ -1,5 +1,6 @@
-Status check at 2026-03-27T06:25:
-- Server running, 0 TS errors
-- Home page renders correctly with hero section, navigation, and user logged in
-- All pages created: Home, QuoteRequest, FindPartner, PartnerDetail, VentilationCalc, PartnersInfo, PartnerRegister, MyPage, PartnerDashboard, AdminDashboard
-- Need to update todo.md and write tests before checkpoint
+Status check 2026-03-27T06:51:
+- Login page redirects to home because user is already authenticated (browser has session cookie from Manus preview)
+- The last network request shows auth.me returning null (from the webdev preview panel) - so the login page works correctly for unauthenticated users
+- The esbuild error in console is stale (from 06:15, before server restart at 06:25)
+- TypeScript: 0 errors, server running fine
+- Need to verify login page renders correctly for non-authenticated users

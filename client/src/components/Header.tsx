@@ -1,5 +1,4 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
@@ -90,11 +89,18 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <a href={getLoginUrl()}>
-              <Button variant="ghost" size="sm" className="text-sm text-muted-foreground hover:text-foreground">
-                로그인
-              </Button>
-            </a>
+            <div className="flex items-center gap-2">
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="text-sm text-muted-foreground hover:text-foreground">
+                  로그인
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm" className="text-sm rounded-lg">
+                  회원가입
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
 
@@ -145,9 +151,14 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <a href={getLoginUrl()} className="block py-2 text-sm text-primary font-medium">
-                  로그인
-                </a>
+                <div className="flex flex-col gap-2">
+                  <Link href="/login" onClick={() => setMobileOpen(false)}>
+                    <span className="block py-2 text-sm text-foreground font-medium">로그인</span>
+                  </Link>
+                  <Link href="/signup" onClick={() => setMobileOpen(false)}>
+                    <span className="block py-2 text-sm text-primary font-medium">회원가입</span>
+                  </Link>
+                </div>
               )}
             </div>
           </nav>

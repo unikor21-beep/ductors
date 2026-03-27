@@ -178,3 +178,37 @@ describe("settings", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("reviews - access control", () => {
+  it("allows public access to reviews by partner", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.reviews.byPartner({ partnerId: 999 });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("rejects unauthenticated from creating reviews", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.reviews.create({ quoteId: 1, partnerId: 1, rating: 5 })
+    ).rejects.toThrow();
+  });
+});
+
+describe("portfolios - access control", () => {
+  it("allows public access to portfolios by partner", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.portfolios.byPartner({ partnerId: 999 });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("rejects non-partner from creating portfolios", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.portfolios.create({ title: "Test Portfolio" })
+    ).rejects.toThrow();
+  });
+});
