@@ -5,31 +5,55 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
-function Router() {
-  // make sure to consider if you need authentication for certain routes
+// Lazy load pages
+const QuoteRequest = lazy(() => import("./pages/QuoteRequest"));
+const FindPartner = lazy(() => import("./pages/FindPartner"));
+const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
+const VentilationCalc = lazy(() => import("./pages/VentilationCalc"));
+const PartnersInfo = lazy(() => import("./pages/PartnersInfo"));
+const PartnerRegister = lazy(() => import("./pages/PartnerRegister"));
+const MyPage = lazy(() => import("./pages/MyPage"));
+const PartnerDashboard = lazy(() => import("./pages/PartnerDashboard"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+
+function LoadingFallback() {
   return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
+function Router() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/quote-request" component={QuoteRequest} />
+        <Route path="/find-partner" component={FindPartner} />
+        <Route path="/partner/:id" component={PartnerDetail} />
+        <Route path="/ventilation" component={VentilationCalc} />
+        <Route path="/partners-info" component={PartnersInfo} />
+        <Route path="/partner-register" component={PartnerRegister} />
+        <Route path="/mypage" component={MyPage} />
+        <Route path="/dashboard" component={PartnerDashboard} />
+        <Route path="/dashboard/:tab" component={PartnerDashboard} />
+        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/:tab" component={AdminDashboard} />
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
+  );
+}
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
