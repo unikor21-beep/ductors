@@ -1,6 +1,13 @@
-Status check 2026-03-27T06:51:
-- Login page redirects to home because user is already authenticated (browser has session cookie from Manus preview)
-- The last network request shows auth.me returning null (from the webdev preview panel) - so the login page works correctly for unauthenticated users
-- The esbuild error in console is stale (from 06:15, before server restart at 06:25)
-- TypeScript: 0 errors, server running fine
-- Need to verify login page renders correctly for non-authenticated users
+Partner grade change UI - 2026-03-27:
+- Admin dashboard > Partners tab shows each partner card with:
+  - Company name, representative, phone
+  - Status badge (승인 완료)
+  - "승인 상태:" dropdown (대기/승인/거부/정지)
+  - "등급:" dropdown with colored circles (브론즈/실버/골드/플래티넘)
+- Grade dropdown shows 4 options with colored dots:
+  - 브론즈 (bronze dot)
+  - 실버 (silver dot)
+  - 골드 (gold dot)
+  - 플래티넘 (platinum dot)
+- Currently selected: 브론즈 (with checkmark)
+- Selecting a grade calls partners.updateGrade API

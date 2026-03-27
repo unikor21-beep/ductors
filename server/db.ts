@@ -419,3 +419,10 @@ export async function getStats() {
   const [v] = await db.select({ count: sql<number>`count(*)` }).from(quoteViews);
   return { users: u.count, partners: p.count, quotes: q.count, orders: o.count, reviews: r.count, views: v.count };
 }
+
+// ===================== PARTNER GRADE =====================
+export async function updatePartnerGrade(id: number, grade: "bronze" | "silver" | "gold" | "platinum") {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(partners).set({ grade }).where(eq(partners.id, id));
+}

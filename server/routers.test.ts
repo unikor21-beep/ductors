@@ -212,3 +212,28 @@ describe("portfolios - access control", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("partners.updateGrade - access control", () => {
+  it("rejects non-admin from updating partner grade", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.partners.updateGrade({ id: 1, grade: "gold" })
+    ).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated from updating partner grade", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.partners.updateGrade({ id: 1, grade: "silver" })
+    ).rejects.toThrow();
+  });
+
+  it("allows admin to update partner grade", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.partners.updateGrade({ id: 1, grade: "gold" });
+    expect(result).toEqual({ success: true });
+  });
+});

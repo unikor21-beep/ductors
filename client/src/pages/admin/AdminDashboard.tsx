@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS } from "@shared/constants";
+import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -27,8 +27,15 @@ export default function AdminDashboard() {
   const { data: allReviews } = trpc.reviews.listAll.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" && activeTab === "reviews" });
   const { data: allProducts } = trpc.products.listAll.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" && activeTab === "products" });
 
+  const utils = trpc.useUtils();
+
   const updatePartnerStatus = trpc.partners.updateStatus.useMutation({
-    onSuccess: () => toast.success("파트너 상태가 변경되었습니다"),
+    onSuccess: () => { toast.success("파트너 상태가 변경되었습니다"); utils.partners.listAll.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updatePartnerGrade = trpc.partners.updateGrade.useMutation({
+    onSuccess: () => { toast.success("파트너 등급이 변경되었습니다"); utils.partners.listAll.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -135,27 +142,60 @@ export default function AdminDashboard() {
             <TabsContent value="partners" className="mt-4 space-y-3">
               {(allPartners || []).map((p) => (
                 <Card key={p.id} className="border-border/50 shadow-sm">
-                  <CardContent className="p-5 flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-foreground">{p.companyName}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground">{p.companyName}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
+                      </div>
                       <Badge variant={p.status === "approved" ? "default" : "secondary"}>
                         {PARTNER_STATUS_LABELS[p.status] || p.status}
                       </Badge>
-                      <Select
-                        value={p.status}
-                        onValueChange={(v) => updatePartnerStatus.mutate({ id: p.id, status: v as any })}
-                      >
-                        <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">대기</SelectItem>
-                          <SelectItem value="approved">승인</SelectItem>
-                          <SelectItem value="rejected">거부</SelectItem>
-                          <SelectItem value="suspended">정지</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap border-t border-border/50 pt-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">승인 상태:</span>
+                        <Select
+                          value={p.status}
+                          onValueChange={(v) => updatePartnerStatus.mutate({ id: p.id, status: v as any })}
+                        >
+                          <SelectTrigger className="w-28 h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">대기</SelectItem>
+                            <SelectItem value="approved">승인</SelectItem>
+                            <SelectItem value="rejected">거부</SelectItem>
+                            <SelectItem value="suspended">정지</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">등급:</span>
+                        <Select
+                          value={p.grade || "bronze"}
+                          onValueChange={(v) => updatePartnerGrade.mutate({ id: p.id, grade: v as any })}
+                        >
+                          <SelectTrigger className="w-32 h-9">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS[p.grade || "bronze"] }} />
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bronze">
+                              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS.bronze }} />브론즈</div>
+                            </SelectItem>
+                            <SelectItem value="silver">
+                              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS.silver }} />실버</div>
+                            </SelectItem>
+                            <SelectItem value="gold">
+                              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS.gold }} />골드</div>
+                            </SelectItem>
+                            <SelectItem value="platinum">
+                              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS.platinum }} />플래티넘</div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

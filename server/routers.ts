@@ -207,6 +207,10 @@ export const appRouter = router({
       await db.updatePartnerStatus(input.id, input.status);
       return { success: true };
     }),
+    updateGrade: adminProcedure.input(z.object({ id: z.number(), grade: z.enum(["bronze", "silver", "gold", "platinum"]) })).mutation(async ({ input }) => {
+      await db.updatePartnerGrade(input.id, input.grade);
+      return { success: true };
+    }),
   }),
 
   // ===================== REVIEWS =====================
