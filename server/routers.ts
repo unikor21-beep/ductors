@@ -116,10 +116,26 @@ export const appRouter = router({
       description: z.string().optional(),
       regions: z.array(z.string()).optional(),
       specialties: z.array(z.string()).optional(),
+      address: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const existing = await db.getPartnerByUserId(ctx.user.id);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "이미 파트너 등록이 되어있습니다" });
-      const id = await db.createPartner({ ...input, userId: ctx.user.id });
+      // Geocode address if provided
+      let latitude: string | undefined;
+      let longitude: string | undefined;
+      if (input.address) {
+        try {
+          const { makeRequest } = await import("./_core/map");
+          const geo = await makeRequest<{ results: Array<{ geometry: { location: { lat: number; lng: number } } }>; status: string }>("/maps/api/geocode/json", { address: input.address });
+          if (geo.status === "OK" && geo.results[0]) {
+            latitude = String(geo.results[0].geometry.location.lat);
+            longitude = String(geo.results[0].geometry.location.lng);
+          }
+        } catch (e) {
+          console.warn("[Geocode] Failed to geocode address:", e);
+        }
+      }
+      const id = await db.createPartner({ ...input, userId: ctx.user.id, latitude, longitude });
       await db.updateUserRole(ctx.user.id, "partner");
       return { id };
     }),
@@ -135,9 +151,24 @@ export const appRouter = router({
       logoUrl: z.string().optional(),
       phone: z.string().optional(),
       email: z.string().optional(),
+      address: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       if (!ctx.partner) throw new TRPCError({ code: "NOT_FOUND" });
-      await db.updatePartner(ctx.partner.id, input as any);
+      // Geocode address if changed
+      let updateData: any = { ...input };
+      if (input.address) {
+        try {
+          const { makeRequest } = await import("./_core/map");
+          const geo = await makeRequest<{ results: Array<{ geometry: { location: { lat: number; lng: number } } }>; status: string }>("/maps/api/geocode/json", { address: input.address });
+          if (geo.status === "OK" && geo.results[0]) {
+            updateData.latitude = String(geo.results[0].geometry.location.lat);
+            updateData.longitude = String(geo.results[0].geometry.location.lng);
+          }
+        } catch (e) {
+          console.warn("[Geocode] Failed to geocode address:", e);
+        }
+      }
+      await db.updatePartner(ctx.partner.id, updateData);
       return { success: true };
     }),
     // View quote with credit deduction
@@ -324,6 +355,22 @@ export const appRouter = router({
       return { success: true };
     }),
     orders: adminProcedure.query(async () => db.getAllOrders()),
+  }),
+
+  // ===================== GEOCODE (public) =====================
+  geocode: router({
+    fromAddress: publicProcedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
+      try {
+        const { makeRequest } = await import("./_core/map");
+        const geo = await makeRequest<{ results: Array<{ geometry: { location: { lat: number; lng: number } }; formatted_address: string }>; status: string }>("/maps/api/geocode/json", { address: input.address });
+        if (geo.status === "OK" && geo.results[0]) {
+          return { lat: geo.results[0].geometry.location.lat, lng: geo.results[0].geometry.location.lng, formattedAddress: geo.results[0].formatted_address };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    }),
   }),
 
   // ===================== FILE UPLOAD =====================

@@ -45,6 +45,9 @@ export const partners = mysqlTable("partners", {
   subscriptionType: mysqlEnum("subscriptionType", ["none", "monthly_view", "monthly_design"]).default("none"),
   subscriptionExpiry: timestamp("subscriptionExpiry"),
   designCredits: int("designCredits").default(0),
+  address: text("address"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

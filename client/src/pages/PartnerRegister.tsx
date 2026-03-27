@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Building2, CheckCircle2 } from "lucide-react";
+import { Building2, CheckCircle2, MapPin } from "lucide-react";
 import { REGIONS } from "@shared/constants";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
@@ -26,6 +26,7 @@ export default function PartnerRegister() {
     representativeName: "",
     phone: "",
     email: "",
+    address: "",
     shortIntro: "",
     description: "",
     regions: [] as string[],
@@ -124,6 +125,14 @@ export default function PartnerRegister() {
               <div>
                 <Label className="text-sm font-medium mb-2 block">이메일</Label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  업체 주소
+                </Label>
+                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="예: 서울특별시 강남구 테헤란로 123" />
+                <p className="text-xs text-muted-foreground mt-1">입력하신 주소는 파트너 찾기 지도에 표시됩니다</p>
               </div>
               <div>
                 <Label className="text-sm font-medium mb-2 block">한줄 소개</Label>

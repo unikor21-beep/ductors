@@ -330,3 +330,47 @@ describe("partners.gradeRules - public access", () => {
     expect(result[0].grade).toBe("platinum");
   });
 });
+
+describe("partners.list - includes location data", () => {
+  it("returns partners with address and coordinate fields", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.partners.list();
+    expect(Array.isArray(result)).toBe(true);
+    // Each partner should have address/latitude/longitude fields (may be null)
+    if (result.length > 0) {
+      const partner = result[0];
+      expect("address" in partner).toBe(true);
+      expect("latitude" in partner).toBe(true);
+      expect("longitude" in partner).toBe(true);
+    }
+  });
+});
+
+describe("geocode.fromAddress - public access", () => {
+  it("allows public user to geocode an address", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.geocode.fromAddress({ address: "서울시 강남구 테헤란로 123" });
+    // Result should be either an object with lat/lng or null
+    if (result) {
+      expect(typeof result.lat).toBe("number");
+      expect(typeof result.lng).toBe("number");
+    } else {
+      expect(result).toBeNull();
+    }
+  });
+});
+
+describe("partners.register - includes address field", () => {
+  it("rejects unauthenticated from registering with address", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.partners.register({
+        companyName: "Test Co",
+        address: "서울시 강남구",
+      })
+    ).rejects.toThrow();
+  });
+});

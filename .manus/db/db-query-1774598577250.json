@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE partners SET address = '서울특별시 강남구 테헤란로 123', latitude = 37.5000000, longitude = 127.0360000 WHERE companyName = '테스트 환기시공';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2G4g884Fizg4Cvz.bbcd21713ad7 --database gMHKJMqLGKEuTWonMkyMmm --execute UPDATE partners SET address = '서울특별시 강남구 테헤란로 123', latitude = 37.5000000, longitude = 127.0360000 WHERE companyName = '테스트 환기시공';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1525
+}
