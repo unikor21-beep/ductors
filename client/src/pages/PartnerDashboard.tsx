@@ -11,11 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { FileText, Eye, Send, Briefcase, CreditCard, Loader2, Clock, Award, AlertCircle, Package } from "lucide-react";
-import { QUOTE_STATUS_LABELS, GRADE_LABELS } from "@shared/constants";
+import { FileText, Eye, Send, Briefcase, CreditCard, Loader2, Clock, Award, AlertCircle, Package, TrendingUp, Star, CheckCircle2, ArrowUp } from "lucide-react";
+import { QUOTE_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 export default function PartnerDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -30,6 +31,7 @@ export default function PartnerDashboard() {
   const { data: myProjects } = trpc.projects.myProjects.useQuery(undefined, { enabled: isAuthenticated && !!partner });
   const { data: products } = trpc.products.list.useQuery(undefined, { enabled: isAuthenticated && !!partner });
   const { data: myOrders } = trpc.partners.myOrders.useQuery(undefined, { enabled: isAuthenticated && !!partner });
+  const { data: gradeProgress } = trpc.partners.gradeProgress.useQuery(undefined, { enabled: isAuthenticated && !!partner });
 
   const viewQuote = trpc.partners.viewQuote.useMutation({
     onSuccess: (data) => {
@@ -99,6 +101,14 @@ export default function PartnerDashboard() {
 
   const viewedQuoteIds = new Set((myViews || []).map((v) => v.quoteId));
 
+  // Grade progress calculations
+  const completedProgressPercent = gradeProgress?.nextRequiredCompleted
+    ? Math.min(100, Math.round((gradeProgress.completedCount / gradeProgress.nextRequiredCompleted) * 100))
+    : 100;
+  const ratingProgressPercent = gradeProgress?.nextRequiredRating
+    ? Math.min(100, Math.round((gradeProgress.avgRating / gradeProgress.nextRequiredRating) * 100))
+    : 100;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -119,6 +129,102 @@ export default function PartnerDashboard() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Grade Progress Card */}
+          {gradeProgress && (
+            <Card className="border-border/50 shadow-sm mb-6 overflow-hidden">
+              <div className="h-1" style={{ background: `linear-gradient(to right, ${GRADE_COLORS[gradeProgress.currentGrade]}, ${gradeProgress.nextGrade ? GRADE_COLORS[gradeProgress.nextGrade] : GRADE_COLORS[gradeProgress.currentGrade]})` }} />
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-foreground">등급 현황</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS[gradeProgress.currentGrade] }} />
+                    <span className="font-bold text-foreground">{GRADE_LABELS[gradeProgress.currentGrade]}</span>
+                    {gradeProgress.nextGrade && (
+                      <>
+                        <ArrowUp className="w-4 h-4 text-muted-foreground" />
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: GRADE_COLORS[gradeProgress.nextGrade] }} />
+                        <span className="text-sm text-muted-foreground">{GRADE_LABELS[gradeProgress.nextGrade]}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Completed Projects */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <span className="text-muted-foreground">시공 완료</span>
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">
+                        {gradeProgress.completedCount}건
+                        {gradeProgress.nextRequiredCompleted !== null && (
+                          <span className="text-muted-foreground font-normal"> / {gradeProgress.nextRequiredCompleted}건</span>
+                        )}
+                      </span>
+                    </div>
+                    <Progress value={completedProgressPercent} className="h-2" />
+                    {gradeProgress.nextRequiredCompleted !== null && gradeProgress.completedCount < gradeProgress.nextRequiredCompleted && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        다음 등급까지 {gradeProgress.nextRequiredCompleted - gradeProgress.completedCount}건 남음
+                      </p>
+                    )}
+                    {completedProgressPercent >= 100 && gradeProgress.nextGrade && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> 조건 충족</p>
+                    )}
+                  </div>
+
+                  {/* Average Rating */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span className="text-muted-foreground">평균 평점</span>
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">
+                        {gradeProgress.avgRating.toFixed(1)}점
+                        {gradeProgress.nextRequiredRating !== null && (
+                          <span className="text-muted-foreground font-normal"> / {gradeProgress.nextRequiredRating}점</span>
+                        )}
+                      </span>
+                    </div>
+                    <Progress value={ratingProgressPercent} className="h-2" />
+                    {gradeProgress.nextRequiredRating !== null && gradeProgress.avgRating < gradeProgress.nextRequiredRating && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        다음 등급까지 {(gradeProgress.nextRequiredRating - gradeProgress.avgRating).toFixed(1)}점 필요
+                      </p>
+                    )}
+                    {ratingProgressPercent >= 100 && gradeProgress.nextGrade && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> 조건 충족</p>
+                    )}
+                  </div>
+                </div>
+
+                {!gradeProgress.nextGrade && (
+                  <div className="mt-4 text-center py-2 bg-primary/5 rounded-lg">
+                    <p className="text-sm font-medium text-primary">최고 등급에 도달했습니다!</p>
+                  </div>
+                )}
+
+                {gradeProgress.nextGrade && completedProgressPercent >= 100 && ratingProgressPercent >= 100 && (
+                  <div className="mt-4 text-center py-2 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm font-medium text-green-700">모든 조건을 충족했습니다. 다음 활동 시 등급이 자동 승급됩니다.</p>
+                  </div>
+                )}
+
+                <div className="mt-4 pt-3 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground">
+                    리뷰 수: {gradeProgress.reviewCount}건 | 등급은 시공 완료 또는 리뷰 등록 시 자동으로 재평가됩니다.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Tabs value={activeTab} onValueChange={(v) => navigate(`/dashboard/${v}`)}>
             <TabsList className="bg-muted/50 flex-wrap h-auto gap-1">

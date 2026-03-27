@@ -426,3 +426,58 @@ export async function updatePartnerGrade(id: number, grade: "bronze" | "silver" 
   if (!db) return;
   await db.update(partners).set({ grade }).where(eq(partners.id, id));
 }
+
+// ===================== AUTO GRADE EVALUATION =====================
+
+/** 등급 기준 테이블
+ * | 등급       | 시공완료 건수 | 평균 평점 |
+ * |-----------|------------|---------|
+ * | 브론즈     | 0+         | 0+      |
+ * | 실버       | 3+         | 3.5+    |
+ * | 골드       | 10+        | 4.0+    |
+ * | 플래티넘   | 30+        | 4.5+    |
+ */
+
+export const GRADE_RULES = [
+  { grade: "platinum" as const, minCompleted: 30, minRating: 4.5 },
+  { grade: "gold" as const, minCompleted: 10, minRating: 4.0 },
+  { grade: "silver" as const, minCompleted: 3, minRating: 3.5 },
+  { grade: "bronze" as const, minCompleted: 0, minRating: 0 },
+];
+
+export async function getCompletedProjectCount(partnerId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(projectManagement)
+    .where(and(eq(projectManagement.partnerId, partnerId), eq(projectManagement.status, "completed")));
+  return result?.count || 0;
+}
+
+export function calculateGrade(completedCount: number, avgRating: number): "bronze" | "silver" | "gold" | "platinum" {
+  for (const rule of GRADE_RULES) {
+    if (completedCount >= rule.minCompleted && avgRating >= rule.minRating) {
+      return rule.grade;
+    }
+  }
+  return "bronze";
+}
+
+export async function evaluateAndUpdatePartnerGrade(partnerId: number): Promise<{ oldGrade: string; newGrade: string; changed: boolean }> {
+  const db = await getDb();
+  if (!db) return { oldGrade: "bronze", newGrade: "bronze", changed: false };
+
+  const partner = await getPartnerById(partnerId);
+  if (!partner) return { oldGrade: "bronze", newGrade: "bronze", changed: false };
+
+  const completedCount = await getCompletedProjectCount(partnerId);
+  const avgRating = parseFloat(String(partner.avgRating || "0"));
+  const oldGrade = partner.grade || "bronze";
+  const newGrade = calculateGrade(completedCount, avgRating);
+
+  if (newGrade !== oldGrade) {
+    await updatePartnerGrade(partnerId, newGrade);
+    return { oldGrade, newGrade, changed: true };
+  }
+
+  return { oldGrade, newGrade, changed: false };
+}

@@ -237,3 +237,96 @@ describe("partners.updateGrade - access control", () => {
     expect(result).toEqual({ success: true });
   });
 });
+
+describe("auto grade calculation (pure logic)", () => {
+  it("returns bronze for 0 completed and 0 rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(0, 0)).toBe("bronze");
+  });
+
+  it("returns bronze for low completed count even with high rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(2, 5.0)).toBe("bronze");
+  });
+
+  it("returns silver for 3+ completed and 3.5+ rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(3, 3.5)).toBe("silver");
+  });
+
+  it("returns silver for 5 completed and 3.8 rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(5, 3.8)).toBe("silver");
+  });
+
+  it("returns gold for 10+ completed and 4.0+ rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(10, 4.0)).toBe("gold");
+  });
+
+  it("returns gold for 25 completed and 4.3 rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(25, 4.3)).toBe("gold");
+  });
+
+  it("returns platinum for 30+ completed and 4.5+ rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(30, 4.5)).toBe("platinum");
+  });
+
+  it("returns platinum for 100 completed and 4.9 rating", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(100, 4.9)).toBe("platinum");
+  });
+
+  it("returns silver when completed is enough for gold but rating is too low", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(15, 3.5)).toBe("silver");
+  });
+
+  it("returns bronze when rating is high but completed is too low", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(1, 4.8)).toBe("bronze");
+  });
+
+  it("returns gold when completed is enough for platinum but rating is not", async () => {
+    const { calculateGrade } = await import("./db");
+    expect(calculateGrade(50, 4.2)).toBe("gold");
+  });
+});
+
+describe("grade rules data", () => {
+  it("GRADE_RULES has 4 entries in descending order", async () => {
+    const { GRADE_RULES } = await import("./db");
+    expect(GRADE_RULES).toHaveLength(4);
+    expect(GRADE_RULES[0].grade).toBe("platinum");
+    expect(GRADE_RULES[1].grade).toBe("gold");
+    expect(GRADE_RULES[2].grade).toBe("silver");
+    expect(GRADE_RULES[3].grade).toBe("bronze");
+  });
+
+  it("platinum requires highest thresholds", async () => {
+    const { GRADE_RULES } = await import("./db");
+    const platinum = GRADE_RULES.find(r => r.grade === "platinum")!;
+    expect(platinum.minCompleted).toBe(30);
+    expect(platinum.minRating).toBe(4.5);
+  });
+
+  it("bronze requires no minimum", async () => {
+    const { GRADE_RULES } = await import("./db");
+    const bronze = GRADE_RULES.find(r => r.grade === "bronze")!;
+    expect(bronze.minCompleted).toBe(0);
+    expect(bronze.minRating).toBe(0);
+  });
+});
+
+describe("partners.gradeRules - public access", () => {
+  it("returns grade rules for public user", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.partners.gradeRules();
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(4);
+    expect(result[0].grade).toBe("platinum");
+  });
+});

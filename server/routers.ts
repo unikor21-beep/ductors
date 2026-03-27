@@ -211,13 +211,38 @@ export const appRouter = router({
       await db.updatePartnerGrade(input.id, input.grade);
       return { success: true };
     }),
+    // Grade rules info (public)
+    gradeRules: publicProcedure.query(() => db.GRADE_RULES),
+    // Partner grade progress (for partner dashboard)
+    gradeProgress: partnerProcedure.query(async ({ ctx }) => {
+      if (!ctx.partner) return null;
+      const completedCount = await db.getCompletedProjectCount(ctx.partner.id);
+      const avgRating = parseFloat(String(ctx.partner.avgRating || "0"));
+      const currentGrade = ctx.partner.grade || "bronze";
+      const calculatedGrade = db.calculateGrade(completedCount, avgRating);
+      // Find next grade target
+      const currentRuleIndex = db.GRADE_RULES.findIndex(r => r.grade === currentGrade);
+      const nextRule = currentRuleIndex > 0 ? db.GRADE_RULES[currentRuleIndex - 1] : null;
+      return {
+        currentGrade,
+        calculatedGrade,
+        completedCount,
+        avgRating,
+        reviewCount: ctx.partner.reviewCount || 0,
+        nextGrade: nextRule?.grade || null,
+        nextRequiredCompleted: nextRule?.minCompleted || null,
+        nextRequiredRating: nextRule?.minRating || null,
+      };
+    }),
   }),
 
   // ===================== REVIEWS =====================
   reviews: router({
     create: protectedProcedure.input(z.object({ quoteId: z.number(), partnerId: z.number(), rating: z.number().min(1).max(5), content: z.string().optional() })).mutation(async ({ ctx, input }) => {
       const id = await db.createReview({ ...input, customerId: ctx.user.id });
-      return { id };
+      // Auto-evaluate partner grade after new review
+      const gradeResult = await db.evaluateAndUpdatePartnerGrade(input.partnerId);
+      return { id, gradeChanged: gradeResult.changed, newGrade: gradeResult.newGrade };
     }),
     byPartner: publicProcedure.input(z.object({ partnerId: z.number() })).query(async ({ input }) => db.getReviewsByPartner(input.partnerId)),
     listAll: adminProcedure.query(async () => db.getAllReviews()),
@@ -268,10 +293,15 @@ export const appRouter = router({
       if (!ctx.partner) return [];
       return db.getProjectsByPartner(ctx.partner.id);
     }),
-    update: partnerProcedure.input(z.object({ id: z.number(), location: z.string().optional(), scheduledDate: z.string().optional(), scheduledTime: z.string().optional(), status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(), memo: z.string().optional() })).mutation(async ({ input }) => {
+    update: partnerProcedure.input(z.object({ id: z.number(), location: z.string().optional(), scheduledDate: z.string().optional(), scheduledTime: z.string().optional(), status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(), memo: z.string().optional() })).mutation(async ({ ctx, input }) => {
       const { id, scheduledDate, ...rest } = input;
       await db.updateProject(id, { ...rest, ...(scheduledDate ? { scheduledDate: new Date(scheduledDate) } : {}) } as any);
-      return { success: true };
+      // Auto-evaluate partner grade when project status changes to completed
+      let gradeResult = null;
+      if (input.status === "completed" && ctx.partner) {
+        gradeResult = await db.evaluateAndUpdatePartnerGrade(ctx.partner.id);
+      }
+      return { success: true, gradeChanged: gradeResult?.changed || false, newGrade: gradeResult?.newGrade };
     }),
   }),
 

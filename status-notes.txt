@@ -1,13 +1,8 @@
-Partner grade change UI - 2026-03-27:
-- Admin dashboard > Partners tab shows each partner card with:
-  - Company name, representative, phone
-  - Status badge (승인 완료)
-  - "승인 상태:" dropdown (대기/승인/거부/정지)
-  - "등급:" dropdown with colored circles (브론즈/실버/골드/플래티넘)
-- Grade dropdown shows 4 options with colored dots:
-  - 브론즈 (bronze dot)
-  - 실버 (silver dot)
-  - 골드 (gold dot)
-  - 플래티넘 (platinum dot)
-- Currently selected: 브론즈 (with checkmark)
-- Selecting a grade calls partners.updateGrade API
+Grade progress card is now rendering correctly on partner dashboard:
+- Top bar: 테스트 환기시공, 골드 badge, 열람권 0개
+- Grade progress card with gradient top border (gold to platinum)
+- "등급 현황" title with 골드 → 플래티넘 indicator
+- 시공 완료: 0건 / 30건 with progress bar, "다음 등급까지 30건 남음"
+- 평균 평점: 0.0점 / 4.5점 with progress bar, "다음 등급까지 4.5점 필요"
+- Footer: "리뷰 수: 0건 | 등급은 시공 완료 또는 리뷰 등록 시 자동으로 재평가됩니다."
+- All working correctly!
