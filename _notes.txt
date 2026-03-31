@@ -1,0 +1,4 @@
+Homepage renders correctly with default backgrounds.
+No TypeScript errors, no build errors.
+Dev server is running.
+Next: write tests, check admin page, save checkpoint.

@@ -386,3 +386,84 @@ describe("partners.register - includes address field", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("settings - background image management", () => {
+  it("allows public user to get hero_bg_url setting", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.get({ key: "hero_bg_url" });
+    // Should return null or a string URL
+    expect(result === null || typeof result === "string").toBe(true);
+  });
+
+  it("allows public user to get section3_bg_url setting", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.get({ key: "section3_bg_url" });
+    expect(result === null || typeof result === "string").toBe(true);
+  });
+
+  it("allows admin to set hero background URL", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.set({ key: "hero_bg_url", value: "https://example.com/hero.jpg" });
+    expect(result).toEqual({ success: true });
+  });
+
+  it("allows admin to set section3 background URL", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.set({ key: "section3_bg_url", value: "https://example.com/section3.jpg" });
+    expect(result).toEqual({ success: true });
+  });
+
+  it("rejects non-admin from setting hero background", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.settings.set({ key: "hero_bg_url", value: "https://example.com/hack.jpg" })
+    ).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated from setting background", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.settings.set({ key: "hero_bg_url", value: "https://example.com/hack.jpg" })
+    ).rejects.toThrow();
+  });
+
+  it("allows admin to get all settings", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    // Admin can access getAll (it's a public procedure)
+    const result = await caller.settings.getAll();
+    expect(Array.isArray(result)).toBe(true);
+  });
+});
+
+describe("upload.adminUploadImage - access control", () => {
+  it("rejects non-admin from uploading images", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.upload.adminUploadImage({
+        base64: "dGVzdA==",
+        contentType: "image/png",
+        filename: "test.png",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated from uploading images", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.upload.adminUploadImage({
+        base64: "dGVzdA==",
+        contentType: "image/png",
+        filename: "test.png",
+      })
+    ).rejects.toThrow();
+  });
+});

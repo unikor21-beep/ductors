@@ -9,10 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
-import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert } from "lucide-react";
+import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon } from "lucide-react";
 import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
+
+const BackgroundManager = lazy(() => import("./BackgroundManager"));
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="quotes">견적</TabsTrigger>
               <TabsTrigger value="reviews">리뷰</TabsTrigger>
               <TabsTrigger value="products">상품</TabsTrigger>
+              <TabsTrigger value="backgrounds">배경 관리</TabsTrigger>
             </TabsList>
 
             {/* Stats */}
@@ -281,6 +284,13 @@ export default function AdminDashboard() {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Backgrounds */}
+            <TabsContent value="backgrounds" className="mt-4">
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+                <BackgroundManager />
+              </Suspense>
             </TabsContent>
           </Tabs>
         </div>

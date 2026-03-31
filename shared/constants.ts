@@ -39,3 +39,9 @@ export const GRADE_COLORS: Record<string, string> = {
   gold: "#FFD700",
   platinum: "#E5E4E2",
 };
+
+// Site settings keys for admin-managed background images
+export const SETTING_KEYS = {
+  HERO_BG: "hero_bg_url",
+  SECTION3_BG: "section3_bg_url",
+} as const;

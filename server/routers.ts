@@ -380,6 +380,18 @@ export const appRouter = router({
       const key = `uploads/${nanoid()}.${ext}`;
       return { key, uploadUrl: key };
     }),
+    // Admin image upload (base64 → S3)
+    adminUploadImage: adminProcedure.input(z.object({
+      base64: z.string(),
+      contentType: z.string(),
+      filename: z.string(),
+    })).mutation(async ({ input }) => {
+      const ext = input.filename.split(".").pop() || "jpg";
+      const key = `site-backgrounds/${nanoid()}.${ext}`;
+      const buffer = Buffer.from(input.base64, "base64");
+      const { url } = await storagePut(key, buffer, input.contentType);
+      return { url };
+    }),
   }),
 });
 

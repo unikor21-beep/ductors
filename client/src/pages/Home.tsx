@@ -3,9 +3,36 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { FileText, Search, Wind, ArrowRight, Calculator, Users, Shield, Star, Zap } from "lucide-react";
-import { HERO_BG_DEFAULT, PARTNERS_BG_DEFAULT, SECTION3_BG_DEFAULT } from "@shared/constants";
+import { HERO_BG_DEFAULT, SECTION3_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
+import { trpc } from "@/lib/trpc";
+import { useMemo } from "react";
 
 export default function Home() {
+  // Fetch admin-managed background images from DB settings
+  const { data: heroBgSetting } = trpc.settings.get.useQuery(
+    { key: SETTING_KEYS.HERO_BG },
+    { staleTime: 5 * 60 * 1000 }
+  );
+  const { data: section3BgSetting } = trpc.settings.get.useQuery(
+    { key: SETTING_KEYS.SECTION3_BG },
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  const heroBg = heroBgSetting || HERO_BG_DEFAULT;
+  const section3Bg = section3BgSetting || SECTION3_BG_DEFAULT;
+
+  const heroStyle = useMemo(() => ({
+    backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.4)), url(${heroBg})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }), [heroBg]);
+
+  const section3Style = useMemo(() => ({
+    backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.5)), url(${section3Bg})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }), [section3Bg]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -13,11 +40,7 @@ export default function Home() {
       {/* Section 1: Hero - Customer Entry */}
       <section
         className="relative min-h-[85vh] flex items-center justify-center pt-16"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.4)), url(${HERO_BG_DEFAULT})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        style={heroStyle}
       >
         <div className="container text-center text-white relative z-10">
           <div className="max-w-2xl mx-auto">
@@ -105,11 +128,7 @@ export default function Home() {
       {/* Section 3: Partners Entry */}
       <section
         className="relative py-24 md:py-32"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.5)), url(${SECTION3_BG_DEFAULT})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        style={section3Style}
       >
         <div className="container text-center text-white relative z-10">
           <div className="max-w-2xl mx-auto">
