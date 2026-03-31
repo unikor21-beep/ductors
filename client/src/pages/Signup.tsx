@@ -5,25 +5,65 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Link, useLocation } from "wouter";
-import { useEffect, useState } from "react";
-import { UserPlus, Building2, User, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
+import { useState } from "react";
+import { UserPlus, Building2, User, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function Signup() {
   const { isAuthenticated, loading } = useAuth();
-  const [, navigate] = useLocation();
   const [userType, setUserType] = useState<"customer" | "partner" | null>(null);
-
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate("/");
-    }
-  }, [loading, isAuthenticated, navigate]);
 
   const handleSocialSignup = (provider: string) => {
     // All social signups go through Manus OAuth
     window.location.href = getLoginUrl();
   };
+
+  // 이미 로그인된 사용자에게는 파트너 가입 안내를 표시
+  if (!loading && isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 pt-24 pb-16 flex items-center justify-center">
+          <div className="w-full max-w-md px-4">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-100 mb-4">
+                <CheckCircle2 className="w-7 h-7 text-green-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">이미 로그인되어 있습니다</h1>
+              <p className="text-muted-foreground text-sm">아래에서 원하시는 서비스를 이용하세요</p>
+            </div>
+
+            <Card className="border-border/50 shadow-lg">
+              <CardContent className="p-6 space-y-3">
+                <Link href="/partner-register">
+                  <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
+                    <Building2 className="w-4 h-4" />
+                    파트너 가입 신청
+                    <ArrowRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                </Link>
+                <Link href="/quote-request">
+                  <Button variant="outline" className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
+                    <UserPlus className="w-4 h-4" />
+                    견적 의뢰하기
+                    <ArrowRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                </Link>
+                <Link href="/mypage">
+                  <Button variant="outline" className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
+                    <User className="w-4 h-4" />
+                    마이페이지
+                    <ArrowRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

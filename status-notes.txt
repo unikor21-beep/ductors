@@ -1,8 +1,10 @@
-Map view on FindPartner page:
-- Google Maps loaded successfully centered on Seoul
-- Map/Satellite toggle visible
-- Address search bar with placeholder
-- List/Map toggle buttons work correctly
-- Partner card list still shows below the map
-- Test partner doesn't have address yet, so no marker shown
-- Need to update test partner address to verify marker display
+파트너 가입 신청 버그 분석:
+
+1. 파트너스 안내 페이지(/partners-info)의 "파트너 가입 신청" 버튼(index 8)은 <a> 태그
+2. 클릭하면 /signup으로 이동해야 하는데, 메인 페이지(/)로 이동됨
+3. 이미 로그인된 상태이므로 /signup 페이지가 로그인 사용자를 홈으로 리다이렉트하는 것으로 보임
+4. 문제: 이미 로그인한 사용자가 파트너 가입 신청을 하려면 /partner-register로 직접 가야 함
+
+해결방안:
+- 로그인된 사용자가 "파트너 가입 신청" 클릭 시 /partner-register로 직접 이동
+- 미로그인 사용자는 /signup으로 이동 (기존 로직 유지)

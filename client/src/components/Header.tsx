@@ -78,6 +78,11 @@ export default function Header() {
                     <Link href="/dashboard" className="no-underline w-full">파트너 대시보드</Link>
                   </DropdownMenuItem>
                 )}
+                {user?.role === "user" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/partner-register" className="no-underline w-full">파트너 가입 신청</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/mypage" className="no-underline w-full">마이페이지</Link>
                 </DropdownMenuItem>
@@ -141,6 +146,11 @@ export default function Header() {
                   {user?.role === "partner" && (
                     <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
                       <span className="block py-2 text-sm">파트너 대시보드</span>
+                    </Link>
+                  )}
+                  {user?.role === "user" && (
+                    <Link href="/partner-register" onClick={() => setMobileOpen(false)}>
+                      <span className="block py-2 text-sm">파트너 가입 신청</span>
                     </Link>
                   )}
                   <Link href="/mypage" onClick={() => setMobileOpen(false)}>

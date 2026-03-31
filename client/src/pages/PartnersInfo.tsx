@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -16,6 +17,11 @@ const BENEFITS = [
 ];
 
 export default function PartnersInfo() {
+  const { isAuthenticated } = useAuth();
+
+  // 로그인된 사용자는 파트너 가입 신청 폼으로, 미로그인 사용자는 회원가입으로
+  const registerHref = isAuthenticated ? "/partner-register" : "/signup";
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -34,7 +40,7 @@ export default function PartnersInfo() {
           <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">
             환기·닥트 전문 시공업체를 위한 고객 매칭 플랫폼
           </p>
-          <Link href="/signup">
+          <Link href={registerHref}>
             <Button size="lg" className="gap-2 px-8 py-6 rounded-xl text-base bg-white text-gray-900 hover:bg-white/90">
               파트너 가입 신청 <ArrowRight className="w-4 h-4" />
             </Button>
@@ -70,7 +76,7 @@ export default function PartnersInfo() {
         <div className="container text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">지금 바로 시작하세요</h2>
           <p className="text-muted-foreground mb-8">파트너 가입 신청 후 관리자 승인을 거쳐 활동을 시작할 수 있습니다</p>
-          <Link href="/signup">
+          <Link href={registerHref}>
             <Button size="lg" className="gap-2 px-8">
               파트너 가입 신청 <ArrowRight className="w-4 h-4" />
             </Button>
