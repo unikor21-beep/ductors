@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AddressSearch from "@/components/AddressSearch";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -44,6 +45,9 @@ export default function QuoteRequest() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
+  const [zonecode, setZonecode] = useState("");
+  const [baseAddress, setBaseAddress] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -102,13 +106,16 @@ export default function QuoteRequest() {
   const handleSubmit = () => {
     if (!title.trim()) { toast.error("제목을 입력해주세요"); return; }
     if (!region) { toast.error("지역을 선택해주세요"); return; }
+    const fullAddress = detailAddress
+      ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
+      : zonecode ? `(${zonecode}) ${baseAddress}` : address;
     createQuote.mutate({
       type: quoteType,
       categoryId: categoryId || undefined,
       title,
       description,
       region,
-      address,
+      address: fullAddress,
       formData,
       designatedPartnerId: quoteType === "designated" ? designatedPartnerId || undefined : undefined,
     });
@@ -249,10 +256,29 @@ export default function QuoteRequest() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">상세 주소</Label>
-                  <Input placeholder="상세 주소를 입력하세요" value={address} onChange={(e) => setAddress(e.target.value)} />
-                </div>
+                <AddressSearch
+                  zonecode={zonecode}
+                  address={baseAddress}
+                  detailAddress={detailAddress}
+                  onAddressChange={(data) => {
+                    setZonecode(data.zonecode);
+                    setBaseAddress(data.address);
+                    // 시도 정보로 지역 자동 설정
+                    const matchedRegion = REGIONS.find(r => data.sido.includes(r) || r.includes(data.sido));
+                    if (matchedRegion) setRegion(matchedRegion);
+                    // 전체 주소 업데이트
+                    setAddress(`(${data.zonecode}) ${data.address}`);
+                  }}
+                  onDetailAddressChange={(val) => {
+                    setDetailAddress(val);
+                    if (baseAddress) {
+                      setAddress(`(${zonecode}) ${baseAddress}, ${val}`);
+                    }
+                  }}
+                  label="시공 주소"
+                  detailPlaceholder="상세 주소 (동/호수/층 등)"
+                  helperText="주소를 입력하면 지역이 자동으로 설정됩니다"
+                />
                 <div>
                   <Label className="text-sm font-medium mb-2 block">요청 내용</Label>
                   <Textarea placeholder="시공에 대한 상세 요청사항을 입력해주세요" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />

@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AddressSearch from "@/components/AddressSearch";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Building2, CheckCircle2, MapPin } from "lucide-react";
+import { Building2, CheckCircle2 } from "lucide-react";
 import { REGIONS } from "@shared/constants";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
@@ -32,6 +33,11 @@ export default function PartnerRegister() {
     regions: [] as string[],
     specialties: [] as string[],
   });
+
+  // 우편번호 찾기 관련 상태
+  const [zonecode, setZonecode] = useState("");
+  const [baseAddress, setBaseAddress] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
 
   const register = trpc.partners.register.useMutation({
     onSuccess: () => {
@@ -69,7 +75,11 @@ export default function PartnerRegister() {
 
   const handleSubmit = () => {
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
-    register.mutate(form);
+    // 주소를 합쳐서 전송
+    const fullAddress = detailAddress
+      ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
+      : zonecode ? `(${zonecode}) ${baseAddress}` : baseAddress;
+    register.mutate({ ...form, address: fullAddress });
   };
 
   const toggleRegion = (r: string) => {
@@ -126,14 +136,22 @@ export default function PartnerRegister() {
                 <Label className="text-sm font-medium mb-2 block">이메일</Label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
               </div>
-              <div>
-                <Label className="text-sm font-medium mb-2 block flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  업체 주소
-                </Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="예: 서울특별시 강남구 테헤란로 123" />
-                <p className="text-xs text-muted-foreground mt-1">입력하신 주소는 파트너 찾기 지도에 표시됩니다</p>
-              </div>
+
+              {/* 우편번호 찾기 주소 입력 */}
+              <AddressSearch
+                zonecode={zonecode}
+                address={baseAddress}
+                detailAddress={detailAddress}
+                onAddressChange={(data) => {
+                  setZonecode(data.zonecode);
+                  setBaseAddress(data.address);
+                }}
+                onDetailAddressChange={setDetailAddress}
+                label="업체 주소"
+                detailPlaceholder="상세 주소 (동/호수/층 등)"
+                helperText="입력하신 주소는 파트너 찾기 지도에 표시됩니다"
+              />
+
               <div>
                 <Label className="text-sm font-medium mb-2 block">한줄 소개</Label>
                 <Input value={form.shortIntro} onChange={(e) => setForm({ ...form, shortIntro: e.target.value })} placeholder="업체를 한줄로 소개해주세요" />
