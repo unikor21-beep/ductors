@@ -1,0 +1,7 @@
+Terms page (/terms): Renders correctly with all 13 sections + appendix.
+Header and footer links visible. All content properly formatted.
+Privacy page needs to be checked next.
+Signup page shows 'already logged in' state since user is authenticated.
+The agreement checkboxes will show for non-authenticated users.
+Footer shows terms/privacy links correctly in both the column and the bottom bar.
+Now need to write vitest tests.

@@ -467,3 +467,112 @@ describe("upload.adminUploadImage - access control", () => {
     ).rejects.toThrow();
   });
 });
+
+// ===================== TERMS & PRIVACY PAGES (Route registration tests) =====================
+describe("Terms and Privacy pages route registration", () => {
+  it("Terms and Privacy pages are registered in App.tsx routes", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const appTsx = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/App.tsx"),
+      "utf-8"
+    );
+    expect(appTsx).toContain('path="/terms"');
+    expect(appTsx).toContain('path="/privacy"');
+    expect(appTsx).toContain("import(\"./pages/Terms\")");
+    expect(appTsx).toContain("import(\"./pages/Privacy\")");
+  });
+
+  it("Terms page file exists with proper content", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const termsPath = path.resolve(__dirname, "../client/src/pages/Terms.tsx");
+    expect(fs.existsSync(termsPath)).toBe(true);
+    const content = fs.readFileSync(termsPath, "utf-8");
+    expect(content).toContain("서비스 이용약관");
+    expect(content).toContain("제1조");
+    expect(content).toContain("개인정보 보호법");
+    expect(content).toContain("부칙");
+  });
+
+  it("Privacy page file exists with proper content", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const privacyPath = path.resolve(__dirname, "../client/src/pages/Privacy.tsx");
+    expect(fs.existsSync(privacyPath)).toBe(true);
+    const content = fs.readFileSync(privacyPath, "utf-8");
+    expect(content).toContain("개인정보처리방침");
+    expect(content).toContain("개인정보 보호법");
+    expect(content).toContain("통신비밀보호법");
+    expect(content).toContain("개인정보분쟁조정위원회");
+  });
+});
+
+// ===================== SIGNUP TERMS AGREEMENT =====================
+describe("Signup page terms agreement", () => {
+  it("Signup page includes required agreement checkboxes", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const signupPath = path.resolve(__dirname, "../client/src/pages/Signup.tsx");
+    const content = fs.readFileSync(signupPath, "utf-8");
+    expect(content).toContain("agreeTerms");
+    expect(content).toContain("agreePrivacy");
+    expect(content).toContain("agreeMarketing");
+    expect(content).toContain("[필수]");
+    expect(content).toContain("[선택]");
+    expect(content).toContain("전체 동의");
+    expect(content).toContain('href="/terms"');
+    expect(content).toContain('href="/privacy"');
+  });
+
+  it("Signup page blocks social signup without agreement", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const signupPath = path.resolve(__dirname, "../client/src/pages/Signup.tsx");
+    const content = fs.readFileSync(signupPath, "utf-8");
+    expect(content).toContain("canProceed");
+    expect(content).toContain("필수 약관에 동의해주세요");
+    expect(content).toContain("disabled={!canProceed}");
+  });
+});
+
+// ===================== PARTNER REGISTER TERMS AGREEMENT =====================
+describe("Partner register terms agreement", () => {
+  it("Partner register page includes required agreement checkboxes", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const partnerPath = path.resolve(__dirname, "../client/src/pages/PartnerRegister.tsx");
+    const content = fs.readFileSync(partnerPath, "utf-8");
+    expect(content).toContain("agreePartnerTerms");
+    expect(content).toContain("agreePrivacy");
+    expect(content).toContain("[필수]");
+    expect(content).toContain("파트너 가입 약관 동의");
+    expect(content).toContain("파트너 서비스 이용약관 동의");
+    expect(content).toContain("개인정보 수집·이용 동의");
+    expect(content).toContain('href="/terms"');
+    expect(content).toContain('href="/privacy"');
+  });
+
+  it("Partner register validates terms agreement before submission", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const partnerPath = path.resolve(__dirname, "../client/src/pages/PartnerRegister.tsx");
+    const content = fs.readFileSync(partnerPath, "utf-8");
+    expect(content).toContain("!agreePartnerTerms || !agreePrivacy");
+    expect(content).toContain("필수 약관에 동의해주세요");
+  });
+});
+
+// ===================== FOOTER LEGAL LINKS =====================
+describe("Footer legal links", () => {
+  it("Footer includes terms and privacy links", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const footerPath = path.resolve(__dirname, "../client/src/components/Footer.tsx");
+    const content = fs.readFileSync(footerPath, "utf-8");
+    expect(content).toContain('href="/terms"');
+    expect(content).toContain('href="/privacy"');
+    expect(content).toContain("이용약관");
+    expect(content).toContain("개인정보처리방침");
+  });
+});

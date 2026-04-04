@@ -5,16 +5,53 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
 import { useState } from "react";
 import { UserPlus, Building2, User, ArrowRight, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Signup() {
   const { isAuthenticated, loading } = useAuth();
   const [userType, setUserType] = useState<"customer" | "partner" | null>(null);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreeMarketing, setAgreeMarketing] = useState(false);
+  const [agreeAll, setAgreeAll] = useState(false);
+
+  const handleAgreeAll = (checked: boolean) => {
+    setAgreeAll(checked);
+    setAgreeTerms(checked);
+    setAgreePrivacy(checked);
+    setAgreeMarketing(checked);
+  };
+
+  const handleIndividualChange = (field: "terms" | "privacy" | "marketing", checked: boolean) => {
+    if (field === "terms") setAgreeTerms(checked);
+    if (field === "privacy") setAgreePrivacy(checked);
+    if (field === "marketing") setAgreeMarketing(checked);
+
+    const newTerms = field === "terms" ? checked : agreeTerms;
+    const newPrivacy = field === "privacy" ? checked : agreePrivacy;
+    const newMarketing = field === "marketing" ? checked : agreeMarketing;
+    setAgreeAll(newTerms && newPrivacy && newMarketing);
+  };
+
+  const canProceed = agreeTerms && agreePrivacy;
 
   const handleSocialSignup = (provider: string) => {
-    // All social signups go through Manus OAuth
+    if (!canProceed) {
+      toast.error("필수 약관에 동의해주세요");
+      return;
+    }
+    window.location.href = getLoginUrl();
+  };
+
+  const handleEmailSignup = () => {
+    if (!canProceed) {
+      toast.error("필수 약관에 동의해주세요");
+      return;
+    }
     window.location.href = getLoginUrl();
   };
 
@@ -120,12 +157,79 @@ export default function Signup() {
             </button>
           </div>
 
+          {/* Terms Agreement Section */}
+          <Card className="border-border/50 shadow-sm mb-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                <Checkbox
+                  id="agree-all"
+                  checked={agreeAll}
+                  onCheckedChange={(checked) => handleAgreeAll(checked === true)}
+                />
+                <label htmlFor="agree-all" className="text-sm font-semibold text-foreground cursor-pointer">
+                  전체 동의
+                </label>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="agree-terms"
+                  checked={agreeTerms}
+                  onCheckedChange={(checked) => handleIndividualChange("terms", checked === true)}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <label htmlFor="agree-terms" className="text-sm text-foreground cursor-pointer">
+                    <span className="text-red-500 font-medium">[필수]</span> 서비스 이용약관 동의
+                  </label>
+                  <Link href="/terms" className="text-xs text-primary hover:underline ml-2">
+                    보기
+                  </Link>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="agree-privacy"
+                  checked={agreePrivacy}
+                  onCheckedChange={(checked) => handleIndividualChange("privacy", checked === true)}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <label htmlFor="agree-privacy" className="text-sm text-foreground cursor-pointer">
+                    <span className="text-red-500 font-medium">[필수]</span> 개인정보 수집·이용 동의
+                  </label>
+                  <Link href="/privacy" className="text-xs text-primary hover:underline ml-2">
+                    보기
+                  </Link>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="agree-marketing"
+                  checked={agreeMarketing}
+                  onCheckedChange={(checked) => handleIndividualChange("marketing", checked === true)}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <label htmlFor="agree-marketing" className="text-sm text-foreground cursor-pointer">
+                    <span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의
+                  </label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-border/50 shadow-lg">
             <CardContent className="p-6 space-y-4">
               {/* Social Signup Buttons */}
               <button
                 onClick={() => handleSocialSignup("kakao")}
-                className="w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm transition-all hover:opacity-90"
+                disabled={!canProceed}
+                className={`w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm transition-all ${
+                  canProceed ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"
+                }`}
                 style={{ backgroundColor: "#FEE500", color: "#191919" }}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -136,7 +240,10 @@ export default function Signup() {
 
               <button
                 onClick={() => handleSocialSignup("naver")}
-                className="w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm text-white transition-all hover:opacity-90"
+                disabled={!canProceed}
+                className={`w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm text-white transition-all ${
+                  canProceed ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"
+                }`}
                 style={{ backgroundColor: "#03C75A" }}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -147,7 +254,10 @@ export default function Signup() {
 
               <button
                 onClick={() => handleSocialSignup("google")}
-                className="w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm border border-border bg-white text-foreground transition-all hover:bg-gray-50"
+                disabled={!canProceed}
+                className={`w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm border border-border bg-white text-foreground transition-all ${
+                  canProceed ? "hover:bg-gray-50" : "opacity-50 cursor-not-allowed"
+                }`}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M19.6 10.23c0-.68-.06-1.36-.17-2.02H10v3.84h5.38a4.6 4.6 0 01-2 3.02v2.5h3.24c1.89-1.74 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
@@ -166,12 +276,20 @@ export default function Signup() {
               </div>
 
               {/* Manus OAuth Signup */}
-              <a href={getLoginUrl()} className="block">
-                <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
-                  <UserPlus className="w-4 h-4" />
-                  이메일로 가입
-                </Button>
-              </a>
+              <Button
+                onClick={handleEmailSignup}
+                disabled={!canProceed}
+                className="w-full h-12 rounded-xl gap-2 text-sm font-medium"
+              >
+                <UserPlus className="w-4 h-4" />
+                이메일로 가입
+              </Button>
+
+              {!canProceed && (
+                <p className="text-xs text-red-500 text-center">
+                  필수 약관에 동의해야 가입을 진행할 수 있습니다
+                </p>
+              )}
 
               {/* Partner Info Link */}
               {userType === "partner" && (
@@ -196,13 +314,6 @@ export default function Signup() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Terms */}
-          <p className="text-center text-xs text-muted-foreground mt-6 leading-relaxed">
-            가입 시{" "}
-            <span className="underline cursor-pointer">이용약관</span> 및{" "}
-            <span className="underline cursor-pointer">개인정보처리방침</span>에 동의하게 됩니다.
-          </p>
         </div>
       </main>
       <Footer />

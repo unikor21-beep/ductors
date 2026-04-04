@@ -37,11 +37,17 @@ export default function Footer() {
             <div className="flex flex-col gap-2">
               <span className="text-sm text-muted-foreground">이메일: support@ductors.co.kr</span>
               <span className="text-sm text-muted-foreground">전화: 1588-0000</span>
+              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">이용약관</Link>
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">개인정보처리방침</Link>
             </div>
           </div>
         </div>
-        <div className="border-t border-border/50 mt-8 pt-6 text-center">
+        <div className="border-t border-border/50 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} 덕터스. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors no-underline">이용약관</Link>
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors no-underline">개인정보처리방침</Link>
+          </div>
         </div>
       </div>
     </footer>
