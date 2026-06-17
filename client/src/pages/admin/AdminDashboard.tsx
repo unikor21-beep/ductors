@@ -15,6 +15,7 @@ import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAl
 import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
+const CategoryManager = lazy(() => import("./CategoryManager"));
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -84,6 +85,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="quotes">견적</TabsTrigger>
               <TabsTrigger value="reviews">리뷰</TabsTrigger>
               <TabsTrigger value="products">상품</TabsTrigger>
+              <TabsTrigger value="categories">카테고리</TabsTrigger>
               <TabsTrigger value="backgrounds">배경 관리</TabsTrigger>
             </TabsList>
 
@@ -284,6 +286,13 @@ export default function AdminDashboard() {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Categories */}
+            <TabsContent value="categories" className="mt-4">
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+                <CategoryManager />
+              </Suspense>
             </TabsContent>
 
             {/* Backgrounds */}
