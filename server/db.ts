@@ -1,14 +1,16 @@
-import { eq, desc, asc, and, sql, like, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, or, sql, like, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, partners, categories, categoryFields,
   quotes, quoteViews, quoteSubmissions, reviews, portfolios,
-  products, orders, siteSettings, projectManagement
+  products, orders, siteSettings, projectManagement,
+  userConsents, coupons, userCoupons
 } from "../drizzle/schema";
 import type {
   Partner, InsertPartner, Category, CategoryField,
   Quote, InsertQuote, QuoteView, QuoteSubmission,
-  Review, Portfolio, Product, Order, SiteSetting, ProjectManagement
+  Review, Portfolio, Product, Order, SiteSetting, ProjectManagement,
+  UserConsent, InsertUserConsent, Coupon, InsertCoupon, UserCoupon, InsertUserCoupon
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -480,4 +482,110 @@ export async function evaluateAndUpdatePartnerGrade(partnerId: number): Promise<
   }
 
   return { oldGrade, newGrade, changed: false };
+}
+
+// ===================== USER CONSENTS =====================
+export async function upsertUserConsent(userId: number, data: Partial<InsertUserConsent>) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(userConsents).where(eq(userConsents.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(userConsents).set(data as any).where(eq(userConsents.userId, userId));
+  } else {
+    await db.insert(userConsents).values({ userId, ...data } as any);
+  }
+}
+
+export async function getUserConsent(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const r = await db.select().from(userConsents).where(eq(userConsents.userId, userId)).limit(1);
+  return r[0] || null;
+}
+
+// ===================== COUPONS =====================
+export async function createCoupon(data: Omit<InsertCoupon, "id" | "createdAt">) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(coupons).values(data as any).$returningId();
+  return result.id;
+}
+
+export async function getCouponById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const r = await db.select().from(coupons).where(eq(coupons.id, id)).limit(1);
+  return r[0] || null;
+}
+
+export async function getActiveCoupons() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(coupons).where(and(eq(coupons.isActive, true), or(sql`${coupons.expiresAt} IS NULL`, sql`${coupons.expiresAt} > NOW()`)));
+}
+
+export async function getAllCoupons() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(coupons).orderBy(desc(coupons.createdAt));
+}
+
+export async function updateCoupon(id: number, data: Partial<Coupon>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(coupons).set(data as any).where(eq(coupons.id, id));
+}
+
+// ===================== USER COUPONS =====================
+export async function issueUserCoupon(userId: number, couponId: number, expiresAt?: Date) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(userCoupons).values({ userId, couponId, expiresAt } as any).$returningId();
+  return result.id;
+}
+
+export async function getUserCoupons(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(userCoupons).where(eq(userCoupons.userId, userId)).orderBy(desc(userCoupons.createdAt));
+}
+
+export async function getAvailableUserCoupons(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(userCoupons).where(and(
+    eq(userCoupons.userId, userId),
+    eq(userCoupons.status, "available"),
+    or(sql`${userCoupons.expiresAt} IS NULL`, sql`${userCoupons.expiresAt} > NOW()`)
+  )).orderBy(desc(userCoupons.createdAt));
+}
+
+export async function markUserCouponAsUsed(userCouponId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(userCoupons).set({ status: "used", usedAt: new Date() }).where(eq(userCoupons.id, userCouponId));
+}
+
+// Bulk issue coupons to marketing-agreed users
+export async function issueMarketingCouponToAgreedUsers(couponId: number, expiresAt?: Date) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  // Find all users who agreed to marketing
+  const agreedUsers = await db.select({ userId: userConsents.userId }).from(userConsents).where(eq(userConsents.marketingAgreed, true));
+  
+  let count = 0;
+  for (const { userId } of agreedUsers) {
+    // Check if user already has this coupon
+    const existing = await db.select().from(userCoupons).where(and(eq(userCoupons.userId, userId), eq(userCoupons.couponId, couponId))).limit(1);
+    if (existing.length === 0) {
+      await issueUserCoupon(userId, couponId, expiresAt);
+      count++;
+    }
+  }
+  
+  // Update coupon's usedCount (for tracking)
+  await db.update(coupons).set({ usedCount: sql`${coupons.usedCount} + ${count}` }).where(eq(coupons.id, couponId));
+  
+  return count;
 }

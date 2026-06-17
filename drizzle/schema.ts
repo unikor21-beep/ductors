@@ -239,3 +239,58 @@ export const projectManagement = mysqlTable("projectManagement", {
 });
 
 export type ProjectManagement = typeof projectManagement.$inferSelect;
+
+// ============================================================
+// 1-1. USER CONSENTS (사용자 동의 정보)
+// ============================================================
+export const userConsents = mysqlTable("userConsents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  termsAgreed: boolean("termsAgreed").default(false).notNull(),
+  privacyAgreed: boolean("privacyAgreed").default(false).notNull(),
+  marketingAgreed: boolean("marketingAgreed").default(false).notNull(),
+  marketingAgreedAt: timestamp("marketingAgreedAt"),
+  marketingDisagreedAt: timestamp("marketingDisagreedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserConsent = typeof userConsents.$inferSelect;
+export type InsertUserConsent = typeof userConsents.$inferInsert;
+
+// ============================================================
+// 12. COUPONS (쿠폰 정의)
+// ============================================================
+export const coupons = mysqlTable("coupons", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  discountType: mysqlEnum("discountType", ["percentage", "fixed", "free_credit"]).notNull(),
+  discountValue: int("discountValue").notNull(),
+  minOrderAmount: int("minOrderAmount").default(0),
+  maxUses: int("maxUses"),
+  usedCount: int("usedCount").default(0),
+  targetType: mysqlEnum("targetType", ["all", "marketing_agreed", "new_user", "partner"]).default("all").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = typeof coupons.$inferInsert;
+
+// ============================================================
+// 12-1. USER COUPONS (사용자별 쿠폰 발급/사용 이력)
+// ============================================================
+export const userCoupons = mysqlTable("userCoupons", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  couponId: int("couponId").notNull(),
+  status: mysqlEnum("status", ["available", "used", "expired"]).default("available").notNull(),
+  usedAt: timestamp("usedAt"),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserCoupon = typeof userCoupons.$inferSelect;
+export type InsertUserCoupon = typeof userCoupons.$inferInsert;

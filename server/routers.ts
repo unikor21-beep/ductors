@@ -373,6 +373,77 @@ export const appRouter = router({
     }),
   }),
 
+  // ===================== CONSENTS =====================
+  consents: router({
+    me: protectedProcedure.query(async ({ ctx }) => db.getUserConsent(ctx.user.id)),
+    update: protectedProcedure.input(z.object({
+      termsAgreed: z.boolean().optional(),
+      privacyAgreed: z.boolean().optional(),
+      marketingAgreed: z.boolean().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const data: any = {};
+      if (input.termsAgreed !== undefined) data.termsAgreed = input.termsAgreed;
+      if (input.privacyAgreed !== undefined) data.privacyAgreed = input.privacyAgreed;
+      if (input.marketingAgreed !== undefined) {
+        data.marketingAgreed = input.marketingAgreed;
+        data.marketingAgreedAt = input.marketingAgreed ? new Date() : null;
+        data.marketingDisagreedAt = !input.marketingAgreed ? new Date() : null;
+      }
+      await db.upsertUserConsent(ctx.user.id, data);
+      return { success: true };
+    }),
+  }),
+
+  // ===================== COUPONS =====================
+  coupons: router({
+    list: publicProcedure.query(async () => db.getActiveCoupons()),
+    myAvailable: protectedProcedure.query(async ({ ctx }) => db.getAvailableUserCoupons(ctx.user.id)),
+    myAll: protectedProcedure.query(async ({ ctx }) => db.getUserCoupons(ctx.user.id)),
+    // Admin
+    listAll: adminProcedure.query(async () => db.getAllCoupons()),
+    create: adminProcedure.input(z.object({
+      name: z.string(),
+      description: z.string().optional(),
+      discountType: z.enum(["percentage", "fixed", "free_credit"]),
+      discountValue: z.number(),
+      minOrderAmount: z.number().optional(),
+      maxUses: z.number().optional(),
+      targetType: z.enum(["all", "marketing_agreed", "new_user", "partner"]).optional(),
+      expiresAt: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      const id = await db.createCoupon({
+        ...input,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
+        targetType: input.targetType || "all",
+      } as any);
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      isActive: z.boolean().optional(),
+      expiresAt: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await db.updateCoupon(id, {
+        ...data,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+      } as any);
+      return { success: true };
+    }),
+    issueToMarketingUsers: adminProcedure.input(z.object({
+      couponId: z.number(),
+      expiresAt: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      const count = await db.issueMarketingCouponToAgreedUsers(
+        input.couponId,
+        input.expiresAt ? new Date(input.expiresAt) : undefined
+      );
+      return { count };
+    }),
+  }),
+
   // ===================== FILE UPLOAD =====================
   upload: router({
     getPresignedUrl: protectedProcedure.input(z.object({ filename: z.string(), contentType: z.string() })).mutation(async ({ input }) => {
