@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { FileText, Eye, Send, Briefcase, CreditCard, Loader2, Clock, Award, AlertCircle, Package, TrendingUp, Star, CheckCircle2, ArrowUp } from "lucide-react";
 import { QUOTE_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
+import PortfolioManager from "@/components/PortfolioManager";
 
 export default function PartnerDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -231,6 +232,7 @@ export default function PartnerDashboard() {
               <TabsTrigger value="leads">견적 리드</TabsTrigger>
               <TabsTrigger value="submissions">제출 견적</TabsTrigger>
               <TabsTrigger value="projects">현장 관리</TabsTrigger>
+              <TabsTrigger value="portfolios">포트폴리오</TabsTrigger>
               <TabsTrigger value="shop">상품 구매</TabsTrigger>
             </TabsList>
 
@@ -340,6 +342,11 @@ export default function PartnerDashboard() {
                   </Card>
                 ))
               )}
+            </TabsContent>
+
+            {/* Portfolios */}
+            <TabsContent value="portfolios" className="mt-4">
+              <PortfolioManager />
             </TabsContent>
 
             {/* Shop */}

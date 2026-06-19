@@ -295,6 +295,21 @@ export const appRouter = router({
       return db.getPortfoliosByPartner(ctx.partner.id);
     }),
     byPartner: publicProcedure.input(z.object({ partnerId: z.number() })).query(async ({ input }) => db.getApprovedPortfoliosByPartner(input.partnerId)),
+    update: partnerProcedure.input(z.object({ id: z.number(), title: z.string(), description: z.string().optional(), images: z.array(z.string()).optional(), categoryId: z.number().optional(), region: z.string().optional() })).mutation(async ({ ctx, input }) => {
+      if (!ctx.partner) throw new TRPCError({ code: "NOT_FOUND" });
+      const existing = await db.getPortfolioById(input.id);
+      if (!existing || existing.partnerId !== ctx.partner.id) throw new TRPCError({ code: "FORBIDDEN", message: "본인의 포트폴리오만 수정할 수 있습니다" });
+      const { id, ...rest } = input;
+      await db.updatePortfolio(id, rest);
+      return { success: true };
+    }),
+    delete: partnerProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      if (!ctx.partner) throw new TRPCError({ code: "NOT_FOUND" });
+      const existing = await db.getPortfolioById(input.id);
+      if (!existing || existing.partnerId !== ctx.partner.id) throw new TRPCError({ code: "FORBIDDEN", message: "본인의 포트폴리오만 삭제할 수 있습니다" });
+      await db.deletePortfolio(input.id);
+      return { success: true };
+    }),
     listAll: adminProcedure.query(async () => db.getAllPortfolios()),
     updateStatus: adminProcedure.input(z.object({ id: z.number(), status: z.enum(["pending", "approved", "rejected"]) })).mutation(async ({ input }) => {
       await db.updatePortfolioStatus(input.id, input.status);

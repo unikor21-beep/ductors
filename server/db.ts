@@ -318,6 +318,29 @@ export async function updatePortfolioStatus(id: number, status: "pending" | "app
   await db.update(portfolios).set({ status }).where(eq(portfolios.id, id));
 }
 
+export async function getPortfolioById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(portfolios).where(eq(portfolios.id, id));
+  return rows[0] ?? null;
+}
+
+export async function updatePortfolio(
+  id: number,
+  data: { title?: string; description?: string; images?: string[]; categoryId?: number; region?: string },
+) {
+  const db = await getDb();
+  if (!db) return;
+  // 파트너가 내용을 수정하면 다시 검수 대기 상태로 되돌린다
+  await db.update(portfolios).set({ ...data, status: "pending" } as any).where(eq(portfolios.id, id));
+}
+
+export async function deletePortfolio(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(portfolios).where(eq(portfolios.id, id));
+}
+
 // ===================== PRODUCTS =====================
 export async function getActiveProducts() {
   const db = await getDb();
