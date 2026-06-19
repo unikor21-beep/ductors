@@ -145,6 +145,18 @@ export async function deleteCategory(id: number) {
   await db.delete(categories).where(eq(categories.id, id));
 }
 
+// 두 카테고리의 순서(sortOrder)를 맞바꾼다
+export async function swapCategoryOrder(idA: number, idB: number) {
+  const db = await getDb();
+  if (!db) return;
+  const rows = await db.select().from(categories).where(inArray(categories.id, [idA, idB]));
+  const a = rows.find((r) => r.id === idA);
+  const b = rows.find((r) => r.id === idB);
+  if (!a || !b) return;
+  await db.update(categories).set({ sortOrder: b.sortOrder ?? 0 }).where(eq(categories.id, idA));
+  await db.update(categories).set({ sortOrder: a.sortOrder ?? 0 }).where(eq(categories.id, idB));
+}
+
 // ===================== CATEGORY FIELDS =====================
 export async function getFieldsByCategory(categoryId: number) {
   const db = await getDb();

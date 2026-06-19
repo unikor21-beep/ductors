@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Loader2, Plus, Trash2, ChevronDown, ChevronRight,
-  GripVertical, Edit2, Check, X, Settings2, ListPlus
+  GripVertical, Edit2, Check, X, Settings2, ListPlus, ArrowUp, ArrowDown
 } from "lucide-react";
 
 // ── 타입 ──────────────────────────────────────────────────
@@ -167,7 +167,7 @@ function FieldRow({
 }
 
 // ── 카테고리 카드 컴포넌트 ────────────────────────────────
-function CategoryCard({ category }: { category: Category }) {
+function CategoryCard({ category, onMoveUp, onMoveDown }: { category: Category; onMoveUp?: () => void; onMoveDown?: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(category.name);
@@ -276,6 +276,28 @@ function CategoryCard({ category }: { category: Category }) {
           )}
 
           <div className="flex items-center gap-2 ml-auto shrink-0">
+            <div className="flex items-center">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 disabled:opacity-20"
+                title="위로 이동"
+                disabled={!onMoveUp}
+                onClick={() => onMoveUp?.()}
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 disabled:opacity-20"
+                title="아래로 이동"
+                disabled={!onMoveDown}
+                onClick={() => onMoveDown?.()}
+              >
+                <ArrowDown className="w-3.5 h-3.5" />
+              </Button>
+            </div>
             <div className="flex items-center gap-1.5" title="끄면 고객·파트너 화면에서 숨겨집니다 (데이터는 유지)">
               <span className="text-xs text-muted-foreground">활성</span>
               <Switch
@@ -428,6 +450,11 @@ export default function CategoryManager() {
     onError: (e) => toast.error(e.message),
   });
 
+  const swapOrder = trpc.categories.swapOrder.useMutation({
+    onSuccess: () => { utils.categories.listAll.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
   const handleCreate = () => {
     if (!newCategoryName.trim()) { toast.error("카테고리 이름을 입력하세요"); return; }
     createCategory.mutate({
@@ -534,7 +561,7 @@ export default function CategoryManager() {
         </Card>
       ) : (
         <div className="space-y-5">
-          {parents.map((parent) => {
+          {parents.map((parent, pIdx) => {
             const children = childrenOf(parent.id);
             return (
               <div key={parent.id} className="space-y-2">
@@ -542,7 +569,11 @@ export default function CategoryManager() {
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs shrink-0">대분류</Badge>
                   <div className="flex-1 min-w-0">
-                    <CategoryCard category={parent} />
+                    <CategoryCard
+                      category={parent}
+                      onMoveUp={pIdx > 0 ? () => swapOrder.mutate({ idA: parent.id, idB: parents[pIdx - 1].id }) : undefined}
+                      onMoveDown={pIdx < parents.length - 1 ? () => swapOrder.mutate({ idA: parent.id, idB: parents[pIdx + 1].id }) : undefined}
+                    />
                   </div>
                 </div>
                 {/* 소분류들 (들여쓰기) */}
@@ -550,7 +581,14 @@ export default function CategoryManager() {
                   {children.length === 0 ? (
                     <p className="text-xs text-muted-foreground py-1">아직 소분류가 없습니다. 위 "카테고리 추가"에서 이 대분류의 소분류를 추가하세요.</p>
                   ) : (
-                    children.map((child) => <CategoryCard key={child.id} category={child} />)
+                    children.map((child, cIdx) => (
+                      <CategoryCard
+                        key={child.id}
+                        category={child}
+                        onMoveUp={cIdx > 0 ? () => swapOrder.mutate({ idA: child.id, idB: children[cIdx - 1].id }) : undefined}
+                        onMoveDown={cIdx < children.length - 1 ? () => swapOrder.mutate({ idA: child.id, idB: children[cIdx + 1].id }) : undefined}
+                      />
+                    ))
                   )}
                 </div>
               </div>

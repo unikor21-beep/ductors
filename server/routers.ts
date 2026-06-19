@@ -52,6 +52,10 @@ export const appRouter = router({
       await db.deleteCategory(input.id);
       return { success: true };
     }),
+    swapOrder: adminProcedure.input(z.object({ idA: z.number(), idB: z.number() })).mutation(async ({ input }) => {
+      await db.swapCategoryOrder(input.idA, input.idB);
+      return { success: true };
+    }),
     createField: adminProcedure.input(z.object({ categoryId: z.number(), label: z.string(), fieldType: z.enum(["text", "number", "select", "multiselect", "image", "file"]), options: z.array(z.string()).optional(), isRequired: z.boolean().optional(), sortOrder: z.number().optional() })).mutation(async ({ input }) => {
       const id = await db.createCategoryField(input);
       return { id };
