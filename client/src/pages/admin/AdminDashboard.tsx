@@ -93,7 +93,7 @@ export default function AdminDashboard() {
             <TabsContent value="stats" className="mt-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: "전체 회원", value: stats?.users || 0, icon: Users, color: "text-blue-600 bg-blue-50" },
+                  { label: "전체 회원", value: stats?.users || 0, icon: Users, color: "text-lime-700 bg-lime-50" },
                   { label: "파트너", value: stats?.partners || 0, icon: Building2, color: "text-green-600 bg-green-50" },
                   { label: "견적 요청", value: stats?.quotes || 0, icon: FileText, color: "text-purple-600 bg-purple-50" },
                   { label: "리뷰", value: stats?.reviews || 0, icon: Star, color: "text-yellow-600 bg-yellow-50" },

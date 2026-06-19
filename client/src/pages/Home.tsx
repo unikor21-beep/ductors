@@ -46,7 +46,7 @@ export default function Home() {
           <div className="max-w-2xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight">
               환기·닥트 시공<br />
-              <span className="text-blue-300">전문가를 만나보세요</span>
+              <span className="text-lime-300">전문가를 만나보세요</span>
             </h1>
             <p className="text-lg md:text-xl text-white/80 mb-10 font-light">
               견적 의뢰부터 시공 완료까지, 덕터스가 함께합니다
@@ -91,8 +91,8 @@ export default function Home() {
           <div className="max-w-3xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm text-center hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                  <Wind className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-xl bg-lime-50 flex items-center justify-center mx-auto mb-4">
+                  <Wind className="w-6 h-6 text-lime-700" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">환기량 계산</h3>
                 <p className="text-sm text-muted-foreground">건물 유형별 필요 환기량을 자동으로 산출</p>
@@ -144,15 +144,15 @@ export default function Home() {
             </p>
             <div className="grid grid-cols-3 gap-4 mb-10 max-w-md mx-auto">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-300">100+</div>
+                <div className="text-2xl font-bold text-lime-300">100+</div>
                 <div className="text-xs text-white/60 mt-1">등록 파트너</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-300">500+</div>
+                <div className="text-2xl font-bold text-lime-300">500+</div>
                 <div className="text-xs text-white/60 mt-1">월 견적 요청</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-300">4.8</div>
+                <div className="text-2xl font-bold text-lime-300">4.8</div>
                 <div className="text-xs text-white/60 mt-1 flex items-center justify-center gap-1">
                   <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   평균 평점
