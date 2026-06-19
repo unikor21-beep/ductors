@@ -140,9 +140,9 @@ export async function updateCategory(id: number, data: Partial<Category>) {
 export async function deleteCategory(id: number) {
   const db = await getDb();
   if (!db) return;
-  // 대분류를 삭제하면 그 아래 소분류도 함께 숨김
-  await db.update(categories).set({ isActive: false }).where(eq(categories.id, id));
-  await db.update(categories).set({ isActive: false }).where(eq(categories.parentId, id));
+  // 진짜 삭제: 대분류를 지우면 그 아래 소분류도 함께 완전 삭제
+  await db.delete(categories).where(eq(categories.parentId, id));
+  await db.delete(categories).where(eq(categories.id, id));
 }
 
 // ===================== CATEGORY FIELDS =====================

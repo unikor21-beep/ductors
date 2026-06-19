@@ -276,7 +276,7 @@ function CategoryCard({ category }: { category: Category }) {
           )}
 
           <div className="flex items-center gap-2 ml-auto shrink-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" title="끄면 고객·파트너 화면에서 숨겨집니다 (데이터는 유지)">
               <span className="text-xs text-muted-foreground">활성</span>
               <Switch
                 checked={category.isActive ?? true}
@@ -288,7 +288,14 @@ function CategoryCard({ category }: { category: Category }) {
               size="icon"
               variant="ghost"
               className="h-7 w-7 text-destructive/60 hover:text-destructive"
-              onClick={() => { if (confirm(`"${category.name}" 카테고리를 삭제할까요?`)) deleteCategory.mutate({ id: category.id }); }}
+              title="완전히 삭제 (복구 불가)"
+              onClick={() => {
+                const isParent = !category.parentId;
+                const msg = isParent
+                  ? `"${category.name}" 대분류를 완전히 삭제할까요?\n\n⚠️ 이 대분류에 속한 모든 소분류도 함께 삭제됩니다.\n(삭제하면 복구할 수 없습니다)`
+                  : `"${category.name}" 소분류를 완전히 삭제할까요?\n(삭제하면 복구할 수 없습니다)`;
+                if (confirm(msg)) deleteCategory.mutate({ id: category.id });
+              }}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
@@ -558,7 +565,9 @@ export default function CategoryManager() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             💡 <strong>사용 방법:</strong> 카테고리 우측 화살표(▶)를 눌러 입력 항목을 펼치세요.
             이름·아이콘은 클릭해서 바로 수정 가능합니다.
-            입력 유형 중 <strong>단일/복수 선택</strong>은 추가 후 선택지를 직접 등록하세요.
+            <br />
+            🔘 <strong>활성 스위치</strong> = 잠깐 숨기기 (데이터 유지) ／ 🗑️ <strong>휴지통</strong> = 완전 삭제 (복구 불가).
+            대분류를 삭제하면 그 안의 소분류도 함께 삭제됩니다.
           </p>
         </CardContent>
       </Card>
