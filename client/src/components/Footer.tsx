@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import DuctorsLogo from "@/components/DuctorsLogo";
 
 export default function Footer() {
   return (
@@ -7,10 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-white font-bold text-xs">D</span>
-              </div>
-              <span className="text-base font-bold text-foreground">덕터스</span>
+              <DuctorsLogo size={22} />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               환기·닥트 시공이 필요한 고객과<br />
