@@ -60,6 +60,7 @@ export type InsertPartner = typeof partners.$inferInsert;
 // ============================================================
 export const categories = mysqlTable("categories", {
   id: int("id").autoincrement().primaryKey(),
+  parentId: int("parentId"),
   name: varchar("name", { length: 200 }).notNull(),
   icon: varchar("icon", { length: 100 }),
   description: text("description"),

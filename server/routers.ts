@@ -39,11 +39,11 @@ export const appRouter = router({
     list: publicProcedure.query(async () => db.getActiveCategories()),
     listAll: adminProcedure.query(async () => db.getAllCategories()),
     fields: publicProcedure.input(z.object({ categoryId: z.number() })).query(async ({ input }) => db.getFieldsByCategory(input.categoryId)),
-    create: adminProcedure.input(z.object({ name: z.string(), icon: z.string().optional(), description: z.string().optional(), sortOrder: z.number().optional() })).mutation(async ({ input }) => {
+    create: adminProcedure.input(z.object({ name: z.string(), parentId: z.number().optional(), icon: z.string().optional(), description: z.string().optional(), sortOrder: z.number().optional() })).mutation(async ({ input }) => {
       const id = await db.createCategory(input);
       return { id };
     }),
-    update: adminProcedure.input(z.object({ id: z.number(), name: z.string().optional(), icon: z.string().optional(), description: z.string().optional(), sortOrder: z.number().optional(), isActive: z.boolean().optional() })).mutation(async ({ input }) => {
+    update: adminProcedure.input(z.object({ id: z.number(), name: z.string().optional(), parentId: z.number().nullable().optional(), icon: z.string().optional(), description: z.string().optional(), sortOrder: z.number().optional(), isActive: z.boolean().optional() })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await db.updateCategory(id, data as any);
       return { success: true };

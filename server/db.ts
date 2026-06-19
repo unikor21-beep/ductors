@@ -124,7 +124,7 @@ export async function getAllCategories() {
   return db.select().from(categories).orderBy(asc(categories.sortOrder));
 }
 
-export async function createCategory(data: { name: string; icon?: string; description?: string; sortOrder?: number }) {
+export async function createCategory(data: { name: string; parentId?: number; icon?: string; description?: string; sortOrder?: number }) {
   const db = await getDb();
   if (!db) return null;
   const [result] = await db.insert(categories).values(data as any).$returningId();
@@ -140,7 +140,9 @@ export async function updateCategory(id: number, data: Partial<Category>) {
 export async function deleteCategory(id: number) {
   const db = await getDb();
   if (!db) return;
+  // 대분류를 삭제하면 그 아래 소분류도 함께 숨김
   await db.update(categories).set({ isActive: false }).where(eq(categories.id, id));
+  await db.update(categories).set({ isActive: false }).where(eq(categories.parentId, id));
 }
 
 // ===================== CATEGORY FIELDS =====================

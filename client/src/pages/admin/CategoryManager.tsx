@@ -29,6 +29,7 @@ type CategoryField = {
 
 type Category = {
   id: number;
+  parentId: number | null;
   name: string;
   icon: string | null;
   description: string | null;
@@ -399,9 +400,14 @@ export default function CategoryManager() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryIcon, setNewCategoryIcon] = useState("");
+  const [newCategoryParentId, setNewCategoryParentId] = useState<string>(""); // "" = 대분류, 숫자 = 소분류
 
   const utils = trpc.useUtils();
   const { data: categories = [], isLoading } = trpc.categories.listAll.useQuery();
+
+  // 대분류(parentId 없음)와 소분류로 분리
+  const parents = (categories as Category[]).filter((c) => !c.parentId);
+  const childrenOf = (parentId: number) => (categories as Category[]).filter((c) => c.parentId === parentId);
 
   const createCategory = trpc.categories.create.useMutation({
     onSuccess: () => {
@@ -409,6 +415,7 @@ export default function CategoryManager() {
       utils.categories.listAll.invalidate();
       setNewCategoryName("");
       setNewCategoryIcon("");
+      setNewCategoryParentId("");
       setShowAddCategory(false);
     },
     onError: (e) => toast.error(e.message),
@@ -418,6 +425,7 @@ export default function CategoryManager() {
     if (!newCategoryName.trim()) { toast.error("카테고리 이름을 입력하세요"); return; }
     createCategory.mutate({
       name: newCategoryName.trim(),
+      parentId: newCategoryParentId ? Number(newCategoryParentId) : undefined,
       icon: newCategoryIcon.trim() || undefined,
       sortOrder: categories.length,
     });
@@ -459,6 +467,21 @@ export default function CategoryManager() {
             <CardDescription className="text-xs">추가 후 카드를 펼쳐서 입력 항목을 설정하세요.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">분류 단계</Label>
+              <select
+                value={newCategoryParentId}
+                onChange={(e) => setNewCategoryParentId(e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">대분류 (예: 식당, 가정, 공장, 상업)</option>
+                {parents.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    └ {p.name} 의 소분류로 추가
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex gap-2">
               <div className="space-y-1 w-20">
                 <Label className="text-xs">아이콘 (이모지)</Label>
@@ -471,9 +494,9 @@ export default function CategoryManager() {
                 />
               </div>
               <div className="space-y-1 flex-1">
-                <Label className="text-xs">카테고리 이름 *</Label>
+                <Label className="text-xs">{newCategoryParentId ? "소분류" : "대분류"} 이름 *</Label>
                 <Input
-                  placeholder="예: 주거용 환기, 상업용 환기, 산업용 환기..."
+                  placeholder={newCategoryParentId ? "예: 후드공사, 욕실, 국소배기..." : "예: 식당, 가정, 공장, 상업..."}
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
@@ -499,14 +522,31 @@ export default function CategoryManager() {
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Settings2 className="w-10 h-10 text-muted-foreground/30 mb-3" />
             <p className="text-sm font-medium text-muted-foreground">카테고리가 없습니다</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">위 버튼을 눌러 첫 카테고리를 추가하세요.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">위 버튼을 눌러 첫 대분류를 추가하세요.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {categories.map((cat) => (
-            <CategoryCard key={cat.id} category={cat as Category} />
-          ))}
+        <div className="space-y-5">
+          {parents.map((parent) => {
+            const children = childrenOf(parent.id);
+            return (
+              <div key={parent.id} className="space-y-2">
+                {/* 대분류 */}
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">대분류</Badge>
+                  <CategoryCard category={parent} />
+                </div>
+                {/* 소분류들 (들여쓰기) */}
+                <div className="ml-6 pl-4 border-l-2 border-border/40 space-y-2">
+                  {children.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-1">아직 소분류가 없습니다. 위 "카테고리 추가"에서 이 대분류의 소분류를 추가하세요.</p>
+                  ) : (
+                    children.map((child) => <CategoryCard key={child.id} category={child} />)
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
