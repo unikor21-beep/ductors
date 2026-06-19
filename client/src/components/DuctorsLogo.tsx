@@ -19,7 +19,7 @@ export default function DuctorsLogo({ className, size = 22 }: DuctorsLogoProps) 
         fontSize: size,
         lineHeight: 1,
         letterSpacing: "-0.045em",
-        color: "#8DBF4C",
+        color: "#84cc16",
         userSelect: "none",
       }}
     >
