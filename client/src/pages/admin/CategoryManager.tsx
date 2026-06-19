@@ -533,8 +533,10 @@ export default function CategoryManager() {
               <div key={parent.id} className="space-y-2">
                 {/* 대분류 */}
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">대분류</Badge>
-                  <CategoryCard category={parent} />
+                  <Badge variant="secondary" className="text-xs shrink-0">대분류</Badge>
+                  <div className="flex-1 min-w-0">
+                    <CategoryCard category={parent} />
+                  </div>
                 </div>
                 {/* 소분류들 (들여쓰기) */}
                 <div className="ml-6 pl-4 border-l-2 border-border/40 space-y-2">
