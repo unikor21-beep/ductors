@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ImagePlus, X, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { REGIONS } from "@shared/constants";
 
 const MAX_IMAGES = 3;
 
@@ -267,11 +268,18 @@ export default function PortfolioManager() {
               </div>
               <div className="space-y-1.5">
                 <Label>시공 지역</Label>
-                <Input
-                  placeholder="예: 서울 강남구"
+                <select
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                   value={form.region}
                   onChange={(e) => setForm({ ...form, region: e.target.value })}
-                />
+                >
+                  <option value="">선택 안 함</option>
+                  {REGIONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
