@@ -15,9 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
-import { FileText, ArrowRight, ArrowLeft, CheckCircle2, Building2, Star, Award } from "lucide-react";
+import { FileText, ArrowRight, ArrowLeft, CheckCircle2, Building2, Star, Award, ImagePlus, X } from "lucide-react";
 import { REGIONS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 export default function QuoteRequest() {
@@ -51,6 +51,8 @@ export default function QuoteRequest() {
   const [detailAddress, setDetailAddress] = useState("");
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch designated partner info if partnerId is provided
   const { data: designatedPartner } = trpc.partners.getById.useQuery(
@@ -58,7 +60,15 @@ export default function QuoteRequest() {
     { enabled: !!designatedPartnerId }
   );
 
-  const { data: categories } = trpc.categories.list.useQuery();
+  const { data: categories = [] } = trpc.categories.list.useQuery();
+  // 선택한 카테고리 라벨 계산
+  const selectedCategoryLabel = useMemo(() => {
+    if (!categoryId) return null;
+    const cat = (categories as any[]).find((c) => c.id === categoryId);
+    if (!cat) return null;
+    const parent = cat.parentId ? (categories as any[]).find((c) => c.id === cat.parentId) : null;
+    return parent ? `${parent.name} › ${cat.name}` : cat.name;
+  }, [categoryId, categories]);
   const { data: fields } = trpc.categories.fields.useQuery(
     { categoryId: categoryId! },
     { enabled: !!categoryId }
@@ -236,6 +246,13 @@ export default function QuoteRequest() {
                 <CardTitle className="text-lg">상세 정보 입력</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
+                {/* 선택한 카테고리 표시 */}
+                {selectedCategoryLabel && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+                    <span className="text-xs text-muted-foreground">선택한 카테고리:</span>
+                    <span className="text-xs font-semibold text-primary">{selectedCategoryLabel}</span>
+                  </div>
+                )}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">제목 *</Label>
                   <Input placeholder="예: 아파트 환기 시스템 설치" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -329,6 +346,55 @@ export default function QuoteRequest() {
                     )}
                   </div>
                 ))}
+
+                {/* 사진 업로드 (최대 3장) */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">현장 사진 (선택, 최대 3장)</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (!files) return;
+                      const remaining = 3 - attachments.length;
+                      if (remaining <= 0) { toast.error("사진은 최대 3장까지 올릴 수 있습니다."); return; }
+                      const toRead = Array.from(files).slice(0, remaining);
+                      toRead.forEach((file) => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setAttachments((prev) => [...prev, ev.target?.result as string].slice(0, 3));
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                      e.target.value = "";
+                    }}
+                  />
+                  <div className="flex gap-2 flex-wrap">
+                    {attachments.map((src, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 hover:bg-black/80"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                    {attachments.length < 3 && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <ImagePlus className="w-5 h-5" />
+                        <span className="text-xs">{attachments.length}/3</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
