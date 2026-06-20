@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Search, Star, MapPin, Award, Building2, Loader2, Map as MapIcon, List, Navigation } from "lucide-react";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { REGIONS, GRADE_LABELS } from "@shared/constants";
+import { GRADE_LABELS } from "@shared/constants";
+import RegionSelect, { SIDO_LIST } from "@/components/RegionSelect";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { MapView } from "@/components/Map";
 
 const GRADE_COLORS: Record<string, string> = {
@@ -21,6 +23,7 @@ const GRADE_COLORS: Record<string, string> = {
 
 export default function FindPartner() {
   const [searchRegion, setSearchRegion] = useState("");
+  const [regionInitialized, setRegionInitialized] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("rating");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -31,13 +34,37 @@ export default function FindPartner() {
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const userMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 
+  const { isAuthenticated } = useAuth();
+  const { data: myQuotes } = trpc.quotes.myQuotes.useQuery(undefined, { enabled: isAuthenticated });
+
+  // 내 마지막 견적의 지역(시/도)으로 초기 필터 설정
+  const defaultRegion = useMemo(() => {
+    if (!myQuotes || myQuotes.length === 0) return "";
+    const lastRegion = myQuotes[myQuotes.length - 1]?.region || "";
+    // "서울 광진구" → "서울" 추출
+    const sido = SIDO_LIST.find(s => lastRegion === s || lastRegion.startsWith(s + " "));
+    return sido || "";
+  }, [myQuotes]);
+
   const { data: partners, isLoading } = trpc.partners.list.useQuery();
+
+  // 첫 로드 시 내 지역으로 자동 필터
+  useEffect(() => {
+    if (!regionInitialized && defaultRegion) {
+      setSearchRegion(defaultRegion);
+      setRegionInitialized(true);
+    }
+  }, [defaultRegion, regionInitialized]);
 
   const filtered = useMemo(() => {
     if (!partners) return [];
     let result = [...partners];
     if (searchRegion && searchRegion !== "all") {
-      result = result.filter((p) => (p.regions as string[] || []).includes(searchRegion));
+      result = result.filter((p) =>
+        (p.regions as string[] || []).some((r) =>
+          r === searchRegion || r.startsWith(searchRegion + " ") || searchRegion.startsWith(r + " ") || searchRegion.startsWith(r)
+        )
+      );
     }
     if (searchText) {
       result = result.filter((p) =>
@@ -254,15 +281,21 @@ export default function FindPartner() {
                 className="pl-10"
               />
             </div>
-            <Select value={searchRegion} onValueChange={setSearchRegion}>
-              <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="전체 지역" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 지역</SelectItem>
-                {REGIONS.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 items-center">
+              <Button
+                variant={searchRegion ? "outline" : "ghost"}
+                size="sm"
+                className="text-xs h-9 px-3 shrink-0"
+                onClick={() => setSearchRegion("")}
+              >
+                전체
+              </Button>
+              <RegionSelect
+                value={searchRegion}
+                onChange={setSearchRegion}
+                label=""
+              />
+            </div>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -334,12 +367,15 @@ export default function FindPartner() {
                   <Card className="border-border/50 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer h-full">
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                          {partner.logoUrl ? (
-                            <img src={partner.logoUrl} alt="" className="w-full h-full rounded-xl object-cover" />
-                          ) : (
-                            <Building2 className="w-6 h-6 text-primary" />
-                          )}
+                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                          {(() => {
+                            const img = (partner as any).representativeImage || partner.logoUrl;
+                            return img ? (
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Building2 className="w-6 h-6 text-primary" />
+                            );
+                          })()}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{partner.companyName}</h3>

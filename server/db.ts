@@ -83,8 +83,17 @@ export async function getPartnerById(id: number) {
 export async function getApprovedPartners(region?: string) {
   const db = await getDb();
   if (!db) return [];
-  let q = db.select().from(partners).where(eq(partners.status, "approved")).orderBy(desc(partners.avgRating));
-  return q;
+  const rows = await db.select().from(partners).where(eq(partners.status, "approved")).orderBy(desc(partners.avgRating));
+  // 각 파트너의 승인된 포트폴리오 대표 이미지 첨부
+  const result = await Promise.all(rows.map(async (p) => {
+    const pfList = await db.select().from(portfolios)
+      .where(and(eq(portfolios.partnerId, p.id), eq(portfolios.status, "approved")))
+      .orderBy(desc(portfolios.createdAt))
+      .limit(1);
+    const firstImage = pfList[0]?.images?.[0] ?? null;
+    return { ...p, representativeImage: firstImage };
+  }));
+  return result;
 }
 
 export async function getAllPartners() {

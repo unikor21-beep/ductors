@@ -133,9 +133,11 @@ export default function RegionSelect({
     <div className="space-y-3">
       {/* 1단계: 시/도 */}
       <div>
-        <Label className="text-sm font-medium mb-2 block">
-          {label} {required && <span className="text-destructive">*</span>}
-        </Label>
+        {label && (
+          <Label className="text-sm font-medium mb-2 block">
+            {label} {required && <span className="text-destructive">*</span>}
+          </Label>
+        )}
         <Select value={sido} onValueChange={handleSidoChange}>
           <SelectTrigger>
             <SelectValue placeholder="시/도를 선택하세요" />
@@ -151,10 +153,12 @@ export default function RegionSelect({
       {/* 2단계: 구/시/군 (세종 제외) */}
       {sido && !isSejong && (
         <div>
-          <Label className="text-sm font-medium mb-2 block">
-            구/시/군 {required && <span className="text-destructive">*</span>}
-            {!sigungu && <span className="ml-1 text-xs text-amber-500">(구/시/군을 선택해주세요)</span>}
-          </Label>
+          {label && (
+            <Label className="text-sm font-medium mb-2 block">
+              구/시/군 {required && <span className="text-destructive">*</span>}
+              {!sigungu && <span className="ml-1 text-xs text-amber-500">(구/시/군을 선택해주세요)</span>}
+            </Label>
+          )}
           <Select value={sigungu} onValueChange={handleSigunguChange}>
             <SelectTrigger>
               <SelectValue placeholder="구/시/군을 선택하세요" />
