@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +17,7 @@ import { Link } from "wouter";
 import { useEffect, useState, useRef } from "react";
 import { FileText, Loader2, User, ImagePlus, X, Save } from "lucide-react";
 import { QUOTE_STATUS_LABELS } from "@shared/constants";
-import RegionMultiSelect from "@/components/RegionMultiSelect";
+import { REGIONS } from "@shared/constants";
 import { toast } from "sonner";
 
 // ── 파트너 마이페이지 ────────────────────────────────────
@@ -71,6 +72,13 @@ function PartnerMyPage() {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const toggleRegion = (r: string) => {
+    setForm((f) => ({
+      ...f,
+      regions: f.regions.includes(r) ? f.regions.filter((x) => x !== r) : [...f.regions, r],
+    }));
+  };
 
   const handleSave = () => {
     const fullAddress = detailAddress
@@ -163,10 +171,14 @@ function PartnerMyPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader><CardTitle className="text-base">활동 지역</CardTitle></CardHeader>
         <CardContent>
-          <RegionMultiSelect
-            value={form.regions}
-            onChange={(regions) => setForm({ ...form, regions })}
-          />
+          <div className="flex flex-wrap gap-3">
+            {REGIONS.map((r) => (
+              <label key={r} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
+                {r}
+              </label>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

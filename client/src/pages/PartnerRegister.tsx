@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { Building2, CheckCircle2, ImagePlus, X } from "lucide-react";
-import RegionMultiSelect from "@/components/RegionMultiSelect";
+import { REGIONS } from "@shared/constants";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
 
@@ -77,6 +77,13 @@ export default function PartnerRegister() {
       </div>
     );
   }
+
+  const toggleRegion = (r: string) => {
+    setForm((f) => ({
+      ...f,
+      regions: f.regions.includes(r) ? f.regions.filter((x) => x !== r) : [...f.regions, r],
+    }));
+  };
 
   const handleSubmit = () => {
     if (!agreePartnerTerms || !agreePrivacy) { toast.error("필수 약관에 동의해주세요"); return; }
@@ -211,10 +218,14 @@ export default function PartnerRegister() {
 
               <div>
                 <Label className="text-sm font-medium mb-3 block">활동 지역</Label>
-                <RegionMultiSelect
-                  value={form.regions}
-                  onChange={(regions) => setForm({ ...form, regions })}
-                />
+                <div className="flex flex-wrap gap-2">
+                  {REGIONS.map((r) => (
+                    <label key={r} className="flex items-center gap-1.5 text-sm">
+                      <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
+                      {r}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div>
