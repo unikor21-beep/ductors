@@ -40,7 +40,7 @@ export default function Header() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
           {NAV_ITEMS.filter(item =>
-            !(item.href === "/quote-request" && user?.role === "partner")
+            !(user?.role === "partner" && ["/quote-request", "/find-partner"].includes(item.href))
           ).map((item) => (
             <Link key={item.href} href={item.href}>
               <span
@@ -122,7 +122,7 @@ export default function Header() {
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-border/50 py-4">
           <nav className="container flex flex-col gap-1">
-            {NAV_ITEMS.filter(item => !(item.href === "/quote-request" && user?.role === "partner")).map((item) => (
+            {NAV_ITEMS.filter(item => !(user?.role === "partner" && ["/quote-request", "/find-partner"].includes(item.href))).map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
                 <span
                   className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
