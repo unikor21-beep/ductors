@@ -1,18 +1,31 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { useEffect, lazy, Suspense } from "react";
-import { useParams, useLocation } from "wouter";
-import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
+import { ExternalLink, FileText, AlertCircle,
+ useAuth } from "@/_core/hooks/useAuth";
+import { ExternalLink, FileText, AlertCircle,
+ getLoginUrl } from "@/const";
+import { ExternalLink, FileText, AlertCircle,
+ trpc } from "@/lib/trpc";
+import { ExternalLink, FileText, AlertCircle,
+ Button } from "@/components/ui/button";
+import { ExternalLink, FileText, AlertCircle,
+ Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExternalLink, FileText, AlertCircle,
+ Badge } from "@/components/ui/badge";
+import { ExternalLink, FileText, AlertCircle,
+ Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ExternalLink, FileText, AlertCircle,
+ Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ExternalLink, FileText, AlertCircle,
+ toast } from "sonner";
+import { ExternalLink, FileText, AlertCircle,
+ useEffect, lazy, Suspense } from "react";
+import { ExternalLink, FileText, AlertCircle,
+ useParams, useLocation } from "wouter";
+import { ExternalLink, FileText, AlertCircle,
+ BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon } from "lucide-react";
+import { ExternalLink, FileText, AlertCircle,
+ QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const CategoryManager = lazy(() => import("./CategoryManager"));
@@ -152,6 +165,24 @@ export default function AdminDashboard() {
                       <div className="min-w-0">
                         <h3 className="font-semibold text-foreground">{p.companyName}</h3>
                         <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
+                        {/* 사업자등록증 */}
+                        {(p as any).businessLicenseUrl ? (
+                          <a
+                            href={(p as any).businessLicenseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 mt-1.5 text-xs text-primary hover:underline"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            사업자등록증 확인
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 mt-1.5 text-xs text-amber-500">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            사업자등록증 미첨부
+                          </span>
+                        )}
                       </div>
                       <Badge variant={p.status === "approved" ? "default" : "secondary"}>
                         {PARTNER_STATUS_LABELS[p.status] || p.status}

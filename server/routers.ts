@@ -121,6 +121,8 @@ export const appRouter = router({
       regions: z.array(z.string()).optional(),
       specialties: z.array(z.string()).optional(),
       address: z.string().optional(),
+      businessLicenseUrl: z.string().optional(),
+      logoUrl: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const existing = await db.getPartnerByUserId(ctx.user.id);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "이미 파트너 등록이 되어있습니다" });

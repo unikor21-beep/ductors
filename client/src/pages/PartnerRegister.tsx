@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
-import { Building2, CheckCircle2, ImagePlus, X } from "lucide-react";
+import { Building2, CheckCircle2, ImagePlus, X, FileText, AlertCircle } from "lucide-react";
 import { REGIONS, REGION_GROUPS } from "@shared/constants";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
@@ -36,8 +36,10 @@ export default function PartnerRegister() {
     regions: [] as string[],
     specialties: [] as string[],
     logoUrl: "",
+    businessLicenseUrl: "",
   });
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const licenseInputRef = useRef<HTMLInputElement>(null);
 
   // 우편번호 찾기 관련 상태
   const [zonecode, setZonecode] = useState("");
@@ -88,6 +90,7 @@ export default function PartnerRegister() {
   const handleSubmit = () => {
     if (!agreePartnerTerms || !agreePrivacy) { toast.error("필수 약관에 동의해주세요"); return; }
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
+    if (!form.businessLicenseUrl) { toast.error("사업자등록증을 첨부해주세요"); return; }
     // 주소를 합쳐서 전송
     const fullAddress = detailAddress
       ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
@@ -190,6 +193,61 @@ export default function PartnerRegister() {
               <div>
                 <Label className="text-sm font-medium mb-2 block">이메일</Label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
+              </div>
+
+              {/* 사업자등록증 첨부 */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  사업자등록증 첨부 *
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">(JPG, PNG, PDF)</span>
+                </Label>
+                <input
+                  ref={licenseInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 10 * 1024 * 1024) { toast.error("파일 크기는 10MB 이하여야 합니다"); return; }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setForm({ ...form, businessLicenseUrl: ev.target?.result as string });
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }}
+                />
+                {form.businessLicenseUrl ? (
+                  <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                    {form.businessLicenseUrl.startsWith("data:image") ? (
+                      <img src={form.businessLicenseUrl} alt="사업자등록증" className="w-16 h-16 object-cover rounded-lg border border-border" />
+                    ) : (
+                      <div className="w-16 h-16 bg-red-50 border border-red-200 rounded-lg flex items-center justify-center shrink-0">
+                        <FileText className="w-7 h-7 text-red-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-green-700">첨부 완료</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">관리자 검토 후 승인됩니다</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive shrink-0"
+                      onClick={() => setForm({ ...form, businessLicenseUrl: "" })}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => licenseInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-border hover:border-primary/50 rounded-xl p-6 flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <FileText className="w-8 h-8" />
+                    <span className="text-sm font-medium">사업자등록증 파일 첨부</span>
+                    <span className="text-xs">클릭하여 파일 선택 (최대 10MB)</span>
+                  </button>
+                )}
+                <div className="flex items-start gap-2 mt-2 p-2.5 bg-amber-50 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">사업자등록증은 관리자 검토용으로만 사용되며, 승인 후 파트너 활동이 가능합니다.</p>
+                </div>
               </div>
 
               {/* 우편번호 찾기 주소 입력 */}
