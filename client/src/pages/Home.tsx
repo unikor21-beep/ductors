@@ -1,3 +1,4 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { useMemo } from "react";
 
 export default function Home() {
+  const { user } = useAuth();
   // Fetch admin-managed background images from DB settings
   const { data: heroBgSetting } = trpc.settings.get.useQuery(
     { key: SETTING_KEYS.HERO_BG },
@@ -52,13 +54,15 @@ export default function Home() {
               견적 의뢰부터 시공 완료까지, 덕터스가 함께합니다
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/quote-request">
-                <Button size="lg" className="w-full sm:w-auto gap-3 text-base px-8 py-6 rounded-xl bg-white text-gray-900 hover:bg-white/90 shadow-lg">
-                  <FileText className="w-5 h-5" />
-                  견적의뢰
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
+              {user?.role !== "partner" && (
+                <Link href="/quote-request">
+                  <Button size="lg" className="w-full sm:w-auto gap-3 text-base px-8 py-6 rounded-xl bg-white text-gray-900 hover:bg-white/90 shadow-lg">
+                    <FileText className="w-5 h-5" />
+                    견적의뢰
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
               <Link href="/find-partner">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto gap-3 text-base px-8 py-6 rounded-xl border-white/30 text-white hover:bg-white/10 bg-transparent">
                   <Search className="w-5 h-5" />

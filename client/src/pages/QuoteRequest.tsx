@@ -23,7 +23,7 @@ import { FileText, ArrowRight, ArrowLeft, CheckCircle2, Building2, Star, Award, 
 import { REGIONS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 export default function QuoteRequest() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const [, navigate] = useLocation();
   const searchString = useSearch();
 
@@ -91,6 +91,29 @@ export default function QuoteRequest() {
 
   if (loading) return null;
   if (!isAuthenticated) return null;
+
+  // 파트너는 견적 의뢰 불가
+  if (user?.role === "partner") {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 pt-16 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
+              <FileText className="w-8 h-8 text-amber-500" />
+            </div>
+            <h2 className="text-xl font-bold mb-3">파트너는 견적 의뢰를 할 수 없습니다</h2>
+            <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+              파트너 계정으로는 견적 의뢰가 제한됩니다.<br />
+              견적을 받으시려면 일반 계정으로 로그인해주세요.
+            </p>
+            <Button onClick={() => navigate("/")}>홈으로</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
