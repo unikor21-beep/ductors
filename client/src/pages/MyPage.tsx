@@ -171,6 +171,15 @@ function PartnerMyPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader><CardTitle className="text-base">활동 지역</CardTitle></CardHeader>
         <CardContent>
+          <div className="mb-3">
+            <label className="flex items-center gap-1.5 text-sm cursor-pointer font-medium text-primary">
+              <Checkbox
+                checked={form.regions.length === REGIONS.length}
+                onCheckedChange={(v) => setForm({ ...form, regions: v ? [...REGIONS] : [] })}
+              />
+              전국 (전체 선택)
+            </label>
+          </div>
           <div className="space-y-3">
             {Object.entries(REGION_GROUPS).map(([group, list], gi) => (
               <div key={group}>
