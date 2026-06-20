@@ -400,7 +400,15 @@ export default function QuoteRequest() {
                   <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
                     <ArrowLeft className="w-4 h-4" /> 이전
                   </Button>
-                  <Button onClick={() => setStep(3)} className="flex-1 gap-2">
+                  <Button
+                    onClick={() => {
+                      if (!title.trim()) { toast.error("제목을 입력해주세요"); return; }
+                      if (!region) { toast.error("지역을 선택해주세요"); return; }
+                      setStep(3);
+                    }}
+                    disabled={!title.trim() || !region}
+                    className="flex-1 gap-2"
+                  >
                     다음 <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
