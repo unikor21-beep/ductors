@@ -2,10 +2,21 @@ export const HERO_BG_DEFAULT = "https://d2xsxph8kpxj0f.cloudfront.net/3105196634
 export const PARTNERS_BG_DEFAULT = "https://d2xsxph8kpxj0f.cloudfront.net/310519663479103170/gMHKJMqLGKEuTWonMkyMmm/partners-bg_37107067.jpg";
 export const SECTION3_BG_DEFAULT = "https://d2xsxph8kpxj0f.cloudfront.net/310519663479103170/gMHKJMqLGKEuTWonMkyMmm/section3-bg_0c2b4001.jpeg";
 
+// 서울 → 광역시(가나다순) → 도(인구수순) → 세종/제주
 export const REGIONS = [
-  "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종",
-  "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
+  "서울",
+  "광주", "대구", "대전", "부산", "울산", "인천",  // 광역시 가나다순
+  "경기", "경남", "경북", "전남", "전북", "충남", "충북", "강원",  // 도 인구수순
+  "세종", "제주"
 ];
+
+// 그룹 구분 (Select 구분선용)
+export const REGION_GROUPS = {
+  특별시: ["서울"],
+  광역시: ["광주", "대구", "대전", "부산", "울산", "인천"],
+  도: ["경기", "경남", "경북", "전남", "전북", "충남", "충북", "강원"],
+  특별자치: ["세종", "제주"],
+} as const;
 
 export const QUOTE_STATUS_LABELS: Record<string, string> = {
   registered: "요청 등록",

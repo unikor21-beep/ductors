@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { Building2, CheckCircle2, ImagePlus, X } from "lucide-react";
-import { REGIONS } from "@shared/constants";
+import { REGIONS, REGION_GROUPS } from "@shared/constants";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
 
@@ -218,12 +218,20 @@ export default function PartnerRegister() {
 
               <div>
                 <Label className="text-sm font-medium mb-3 block">활동 지역</Label>
-                <div className="flex flex-wrap gap-2">
-                  {REGIONS.map((r) => (
-                    <label key={r} className="flex items-center gap-1.5 text-sm">
-                      <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
-                      {r}
-                    </label>
+                <div className="space-y-3">
+                  {Object.entries(REGION_GROUPS).map(([group, list], gi) => (
+                    <div key={group}>
+                      {gi > 0 && <div className="border-t border-dashed border-border/50 pt-2" />}
+                      <p className="text-xs text-muted-foreground mb-1.5">{group}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        {list.map((r) => (
+                          <label key={r} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                            <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
+                            {r}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

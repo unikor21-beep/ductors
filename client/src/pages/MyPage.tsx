@@ -17,7 +17,7 @@ import { Link } from "wouter";
 import { useEffect, useState, useRef } from "react";
 import { FileText, Loader2, User, ImagePlus, X, Save } from "lucide-react";
 import { QUOTE_STATUS_LABELS } from "@shared/constants";
-import { REGIONS } from "@shared/constants";
+import { REGIONS, REGION_GROUPS } from "@shared/constants";
 import { toast } from "sonner";
 
 // ── 파트너 마이페이지 ────────────────────────────────────
@@ -171,12 +171,20 @@ function PartnerMyPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader><CardTitle className="text-base">활동 지역</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {REGIONS.map((r) => (
-              <label key={r} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
-                {r}
-              </label>
+          <div className="space-y-3">
+            {Object.entries(REGION_GROUPS).map(([group, list], gi) => (
+              <div key={group}>
+                {gi > 0 && <div className="border-t border-dashed border-border/50 pt-2" />}
+                <p className="text-xs text-muted-foreground mb-1.5">{group}</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {list.map((r) => (
+                    <label key={r} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                      <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
+                      {r}
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>

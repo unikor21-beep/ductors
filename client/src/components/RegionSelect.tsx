@@ -79,7 +79,19 @@ export const REGION_DATA: Record<string, string[]> = {
   ],
 };
 
-export const SIDO_LIST = Object.keys(REGION_DATA);
+// 서울 → 광역시(가나다순) → 도(인구수순) → 세종/제주
+export const SIDO_LIST = [
+  "서울",
+  "광주", "대구", "대전", "부산", "울산", "인천",
+  "경기", "경남", "경북", "전남", "전북", "충남", "충북", "강원",
+  "세종", "제주",
+];
+
+// 구분선 위치
+export const SIDO_SEPARATORS = new Set(["광주", "경기", "세종"]);
+// 광주 앞: 특별시↔광역시 구분
+// 경기 앞: 광역시↔도 구분
+// 세종 앞: 도↔특별자치 구분
 
 // ── Props ────────────────────────────────────────────────
 type Props = {
@@ -144,7 +156,12 @@ export default function RegionSelect({
           </SelectTrigger>
           <SelectContent>
             {SIDO_LIST.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+              <div key={s}>
+                {SIDO_SEPARATORS.has(s) && (
+                  <div className="my-1 border-t border-dashed border-border/60" />
+                )}
+                <SelectItem value={s}>{s}</SelectItem>
+              </div>
             ))}
           </SelectContent>
         </Select>
