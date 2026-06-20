@@ -73,7 +73,7 @@ export default function Header() {
                 )}
                 {user?.role === "partner" && (
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="no-underline w-full">파트너 대시보드</Link>
+                    <Link href="/dashboard" className="no-underline w-full">대시보드</Link>
                   </DropdownMenuItem>
                 )}
                 {user?.role === "user" && (
@@ -143,7 +143,7 @@ export default function Header() {
                   )}
                   {user?.role === "partner" && (
                     <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
-                      <span className="block py-2 text-sm">파트너 대시보드</span>
+                      <span className="block py-2 text-sm">대시보드</span>
                     </Link>
                   )}
                   {user?.role === "user" && (
