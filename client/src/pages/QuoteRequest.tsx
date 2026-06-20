@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AddressSearch from "@/components/AddressSearch";
 import CategorySelect from "@/components/CategorySelect";
+import RegionSelect from "@/components/RegionSelect";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -260,17 +261,12 @@ export default function QuoteRequest() {
                   <Label className="text-sm font-medium mb-2 block">제목 *</Label>
                   <Input placeholder="예: 아파트 환기 시스템 설치" value={title} onChange={(e) => setTitle(e.target.value)} />
                 </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">지역 *</Label>
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger><SelectValue placeholder="지역을 선택하세요" /></SelectTrigger>
-                    <SelectContent>
-                      {REGIONS.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <RegionSelect
+                  value={region}
+                  onChange={setRegion}
+                  label="지역"
+                  required
+                />
                 <AddressSearch
                   zonecode={zonecode}
                   address={baseAddress}
@@ -278,10 +274,6 @@ export default function QuoteRequest() {
                   onAddressChange={(data) => {
                     setZonecode(data.zonecode);
                     setBaseAddress(data.address);
-                    // 시도 정보로 지역 자동 설정
-                    const matchedRegion = REGIONS.find(r => data.sido.includes(r) || r.includes(data.sido));
-                    if (matchedRegion) setRegion(matchedRegion);
-                    // 전체 주소 업데이트
                     setAddress(`(${data.zonecode}) ${data.address}`);
                   }}
                   onDetailAddressChange={(val) => {
@@ -292,7 +284,7 @@ export default function QuoteRequest() {
                   }}
                   label="시공 주소"
                   detailPlaceholder="상세 주소 (동/호수/층 등)"
-                  helperText="주소를 입력하면 지역이 자동으로 설정됩니다"
+                  helperText="주소는 선택사항입니다"
                 />
                 <div>
                   <Label className="text-sm font-medium mb-2 block">요청 내용</Label>
@@ -407,9 +399,10 @@ export default function QuoteRequest() {
                     onClick={() => {
                       if (!title.trim()) { toast.error("제목을 입력해주세요"); return; }
                       if (!region) { toast.error("지역을 선택해주세요"); return; }
+                      if (region !== "세종" && !region.includes(" ")) { toast.error("구/시/군까지 선택해주세요"); return; }
                       setStep(3);
                     }}
-                    disabled={!title.trim() || !region}
+                    disabled={!title.trim() || !region || (region !== "세종" && !region.includes(" "))}
                     className="flex-1 gap-2"
                   >
                     다음 <ArrowRight className="w-4 h-4" />
