@@ -38,7 +38,15 @@ const SIZE_MAP = {
 
 export default function PartnerAvatar({ logoUrl, companyName, size = "md", className = "" }: Props) {
   const { outer, text } = SIZE_MAP[size];
-  const firstChar = companyName?.trim()?.[0] ?? "?";
+  // 주식회사, (주), ㈜ 등 제거 후 첫 글자 추출
+  const cleanName = (companyName || "")
+    .replace(/^\(주\)\s*/i, "")
+    .replace(/^㈜\s*/,"")
+    .replace(/^주식회사\s*/i, "")
+    .replace(/\s*주식회사$/i, "")
+    .replace(/\s*\(주\)$/i, "")
+    .trim();
+  const firstChar = cleanName[0] ?? companyName?.[0] ?? "?";
   const color = getColor(companyName || "");
 
   if (logoUrl) {
