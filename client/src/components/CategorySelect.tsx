@@ -103,7 +103,8 @@ export default function CategorySelect({
       {selectedParentId && currentSubs.length > 0 && (
         <div>
           <Label className="text-sm font-medium mb-2 block">
-            세부 분야 {required && <span className="text-destructive">*</span>}
+            세부 분야 <span className="text-destructive">*</span>
+            {!selectedChildId && <span className="ml-1 text-xs text-amber-500">(세부 분야를 선택해주세요)</span>}
           </Label>
           <Select
             value={selectedChildId ? String(selectedChildId) : ""}

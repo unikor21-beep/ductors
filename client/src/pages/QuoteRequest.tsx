@@ -232,7 +232,10 @@ export default function QuoteRequest() {
                 <Button
                   onClick={() => setStep(2)}
                   className="w-full gap-2"
-                  disabled={quoteType === "designated" && !designatedPartnerId}
+                  disabled={
+                    (quoteType === "designated" && !designatedPartnerId) ||
+                    !categoryId
+                  }
                 >
                   다음 <ArrowRight className="w-4 h-4" />
                 </Button>
