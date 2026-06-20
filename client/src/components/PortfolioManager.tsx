@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CategorySelect from "@/components/CategorySelect";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,7 @@ const STATUS_INFO: Record<string, { label: string; icon: typeof Clock; className
 export default function PortfolioManager() {
   const utils = trpc.useUtils();
   const { data: portfolios, isLoading } = trpc.portfolios.myPortfolios.useQuery();
-  const { data: categories } = trpc.categories.list.useQuery();
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -250,21 +251,13 @@ export default function PortfolioManager() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>공사 종류</Label>
-                <select
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  value={form.categoryId ?? ""}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value ? Number(e.target.value) : undefined })}
-                >
-                  <option value="">선택 안 함</option>
-                  {categories?.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon ? `${c.icon} ` : ""}
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-1.5">
+                <CategorySelect
+                  value={form.categoryId ?? null}
+                  onChange={(id) => setForm({ ...form, categoryId: id ?? undefined })}
+                  label="공사 종류"
+                  placeholder="선택 안 함"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>시공 지역</Label>

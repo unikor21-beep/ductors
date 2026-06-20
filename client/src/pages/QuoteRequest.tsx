@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AddressSearch from "@/components/AddressSearch";
+import CategorySelect from "@/components/CategorySelect";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -212,17 +213,11 @@ export default function QuoteRequest() {
                   </div>
                 )}
 
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">카테고리</Label>
-                  <Select onValueChange={(v) => setCategoryId(Number(v))}>
-                    <SelectTrigger><SelectValue placeholder="시공 분야를 선택하세요" /></SelectTrigger>
-                    <SelectContent>
-                      {categories?.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <CategorySelect
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  label="카테고리"
+                />
 
                 <Button
                   onClick={() => setStep(2)}
