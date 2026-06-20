@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useParams } from "wouter";
 import { Star, MapPin, Award, Building2, FileText, Phone, Mail, Loader2, ArrowLeft } from "lucide-react";
+import PartnerAvatar from "@/components/PartnerAvatar";
 import { GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 export default function PartnerDetail() {
@@ -55,13 +56,7 @@ export default function PartnerDetail() {
           <Card className="border-border/50 shadow-sm mb-6">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start gap-5">
-                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                  {partner.logoUrl ? (
-                    <img src={partner.logoUrl} alt="" className="w-full h-full rounded-2xl object-cover" />
-                  ) : (
-                    <Building2 className="w-8 h-8 text-primary" />
-                  )}
-                </div>
+                <PartnerAvatar logoUrl={partner.logoUrl} companyName={partner.companyName} size="lg" />
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-2xl font-bold text-foreground">{partner.companyName}</h1>

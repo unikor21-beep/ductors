@@ -10,6 +10,7 @@ import { Link } from "wouter";
 import { Search, Star, MapPin, Award, Building2, Loader2, Map as MapIcon, List, Navigation } from "lucide-react";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { GRADE_LABELS } from "@shared/constants";
+import PartnerAvatar from "@/components/PartnerAvatar";
 import RegionSelect, { SIDO_LIST } from "@/components/RegionSelect";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { MapView } from "@/components/Map";
@@ -367,13 +368,7 @@ export default function FindPartner() {
                   <Card className="border-border/50 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer h-full">
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                          {partner.logoUrl ? (
-                            <img src={partner.logoUrl} alt="" className="w-full h-full object-cover rounded-xl" />
-                          ) : (
-                            <Building2 className="w-6 h-6 text-primary" />
-                          )}
-                        </div>
+                        <PartnerAvatar logoUrl={partner.logoUrl} companyName={partner.companyName} size="md" />
                         <div className="min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{partner.companyName}</h3>
                           <p className="text-sm text-muted-foreground line-clamp-1">{partner.shortIntro || "환기·닥트 전문 시공업체"}</p>

@@ -81,7 +81,6 @@ export default function PartnerRegister() {
   const handleSubmit = () => {
     if (!agreePartnerTerms || !agreePrivacy) { toast.error("필수 약관에 동의해주세요"); return; }
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
-    if (!form.logoUrl) { toast.error("회사 로고를 업로드해주세요"); return; }
     // 주소를 합쳐서 전송
     const fullAddress = detailAddress
       ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
@@ -123,7 +122,7 @@ export default function PartnerRegister() {
             <CardContent className="space-y-5">
               {/* 회사 로고 업로드 */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">회사 로고 *</Label>
+                <Label className="text-sm font-medium mb-2 block">회사 로고 <span className="text-xs text-muted-foreground font-normal">(선택)</span></Label>
                 <div className="flex items-center gap-4">
                   <div
                     className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors bg-muted/30"

@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import AddressSearch from "@/components/AddressSearch";
 import CategorySelect from "@/components/CategorySelect";
 import RegionSelect from "@/components/RegionSelect";
+import PartnerAvatar from "@/components/PartnerAvatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -181,13 +182,7 @@ export default function QuoteRequest() {
                   <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                     <p className="text-xs font-medium text-primary mb-3">지정 파트너</p>
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        {designatedPartner.logoUrl ? (
-                          <img src={designatedPartner.logoUrl} alt="" className="w-full h-full rounded-xl object-cover" />
-                        ) : (
-                          <Building2 className="w-5 h-5 text-primary" />
-                        )}
-                      </div>
+                      <PartnerAvatar logoUrl={designatedPartner.logoUrl} companyName={designatedPartner.companyName} size="sm" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-foreground truncate">{designatedPartner.companyName}</span>
