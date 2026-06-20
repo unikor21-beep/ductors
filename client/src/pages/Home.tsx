@@ -54,7 +54,12 @@ export default function Home() {
               견적 의뢰부터 시공 완료까지, 덕터스가 함께합니다
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user?.role !== "partner" && (
+              {user?.role === "partner" ? (
+                <Button size="lg" disabled className="w-full sm:w-auto gap-3 text-base px-8 py-6 rounded-xl bg-white/40 text-gray-900/40 shadow-lg cursor-not-allowed">
+                  <FileText className="w-5 h-5" />
+                  견적의뢰 (파트너 불가)
+                </Button>
+              ) : (
                 <Link href="/quote-request">
                   <Button size="lg" className="w-full sm:w-auto gap-3 text-base px-8 py-6 rounded-xl bg-white text-gray-900 hover:bg-white/90 shadow-lg">
                     <FileText className="w-5 h-5" />

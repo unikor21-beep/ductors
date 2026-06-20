@@ -4,6 +4,7 @@ import DuctorsLogo from "@/components/DuctorsLogo";
 import { Link, useLocation } from "wouter";
 import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,21 +40,31 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_ITEMS.filter(item =>
-            !(user?.role === "partner" && ["/quote-request", "/find-partner"].includes(item.href))
-          ).map((item) => (
-            <Link key={item.href} href={item.href}>
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  location === item.href
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
+          {NAV_ITEMS.map((item) => {
+            const isRestricted = user?.role === "partner" && ["/quote-request", "/find-partner"].includes(item.href);
+            return isRestricted ? (
+              <button
+                key={item.href}
+                onClick={() => toast.error("파트너 계정으로는 이용할 수 없는 메뉴입니다")}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground/40 cursor-not-allowed relative group"
               >
                 {item.label}
-              </span>
-            </Link>
-          ))}
+                <span className="absolute -top-1 -right-1 text-[9px] bg-muted text-muted-foreground px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">파트너 불가</span>
+              </button>
+            ) : (
+              <Link key={item.href} href={item.href}>
+                <span
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    location === item.href
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right Side */}
@@ -122,7 +133,7 @@ export default function Header() {
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-border/50 py-4">
           <nav className="container flex flex-col gap-1">
-            {NAV_ITEMS.filter(item => !(user?.role === "partner" && ["/quote-request", "/find-partner"].includes(item.href))).map((item) => (
+            {NAV_ITEMS.filter(item => true).map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
                 <span
                   className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
