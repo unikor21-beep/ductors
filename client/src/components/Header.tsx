@@ -61,7 +61,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="w-4 h-4" />
-                  <span className="text-sm">{user?.name || "사용자"}</span>
+                  <span className="text-sm">{user?.role === "admin" ? "관리자" : user?.role === "partner" ? "파트너" : user?.name || "사용자"}</span>
                   <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
