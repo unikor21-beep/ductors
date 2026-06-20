@@ -153,8 +153,12 @@ export async function swapCategoryOrder(idA: number, idB: number) {
   const a = rows.find((r) => r.id === idA);
   const b = rows.find((r) => r.id === idB);
   if (!a || !b) return;
-  await db.update(categories).set({ sortOrder: b.sortOrder ?? 0 }).where(eq(categories.id, idA));
-  await db.update(categories).set({ sortOrder: a.sortOrder ?? 0 }).where(eq(categories.id, idB));
+  // sortOrder가 같거나 NULL이면 id 기반으로 임시 부여 후 swap
+  const orderA = a.sortOrder ?? a.id;
+  const orderB = b.sortOrder ?? b.id;
+  const tempA = orderA === orderB ? orderA - 1 : orderA;
+  await db.update(categories).set({ sortOrder: orderB }).where(eq(categories.id, idA));
+  await db.update(categories).set({ sortOrder: tempA }).where(eq(categories.id, idB));
 }
 
 // ===================== CATEGORY FIELDS =====================
