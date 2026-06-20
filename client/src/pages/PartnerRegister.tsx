@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
-import { Building2, CheckCircle2 } from "lucide-react";
+import { Building2, CheckCircle2, ImagePlus, X } from "lucide-react";
 import { REGIONS } from "@shared/constants";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
@@ -35,7 +35,9 @@ export default function PartnerRegister() {
     description: "",
     regions: [] as string[],
     specialties: [] as string[],
+    logoUrl: "",
   });
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // 우편번호 찾기 관련 상태
   const [zonecode, setZonecode] = useState("");
@@ -79,6 +81,7 @@ export default function PartnerRegister() {
   const handleSubmit = () => {
     if (!agreePartnerTerms || !agreePrivacy) { toast.error("필수 약관에 동의해주세요"); return; }
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
+    if (!form.logoUrl) { toast.error("회사 로고를 업로드해주세요"); return; }
     // 주소를 합쳐서 전송
     const fullAddress = detailAddress
       ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
@@ -118,6 +121,55 @@ export default function PartnerRegister() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              {/* 회사 로고 업로드 */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">회사 로고 *</Label>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors bg-muted/30"
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    {form.logoUrl ? (
+                      <img src={form.logoUrl} alt="로고" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <ImagePlus className="w-6 h-6 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground">로고 업로드</span>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setForm({ ...form, logoUrl: ev.target?.result as string });
+                      reader.readAsDataURL(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div className="space-y-1.5">
+                    <p className="text-sm text-muted-foreground">파트너 찾기 화면에 표시되는 회사 대표 이미지입니다.</p>
+                    <p className="text-xs text-muted-foreground">권장: 정사각형 이미지 (JPG, PNG)</p>
+                    {form.logoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-destructive hover:text-destructive px-2"
+                        onClick={() => setForm({ ...form, logoUrl: "" })}
+                      >
+                        <X className="w-3 h-3 mr-1" /> 삭제
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium mb-2 block">업체명 *</Label>

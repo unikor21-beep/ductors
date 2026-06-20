@@ -368,14 +368,11 @@ export default function FindPartner() {
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4 mb-4">
                         <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                          {(() => {
-                            const img = (partner as any).representativeImage || partner.logoUrl;
-                            return img ? (
-                              <img src={img} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Building2 className="w-6 h-6 text-primary" />
-                            );
-                          })()}
+                          {partner.logoUrl ? (
+                            <img src={partner.logoUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+                          ) : (
+                            <Building2 className="w-6 h-6 text-primary" />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{partner.companyName}</h3>
