@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { Building2, CheckCircle2, ImagePlus, X } from "lucide-react";
-import { REGIONS } from "@shared/constants";
+import RegionMultiSelect from "@/components/RegionMultiSelect";
 
 const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
 
@@ -86,13 +86,6 @@ export default function PartnerRegister() {
       ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
       : zonecode ? `(${zonecode}) ${baseAddress}` : baseAddress;
     register.mutate({ ...form, address: fullAddress });
-  };
-
-  const toggleRegion = (r: string) => {
-    setForm((f) => ({
-      ...f,
-      regions: f.regions.includes(r) ? f.regions.filter((x) => x !== r) : [...f.regions, r],
-    }));
   };
 
   const toggleSpecialty = (s: string) => {
@@ -218,14 +211,10 @@ export default function PartnerRegister() {
 
               <div>
                 <Label className="text-sm font-medium mb-3 block">활동 지역</Label>
-                <div className="flex flex-wrap gap-2">
-                  {REGIONS.map((r) => (
-                    <label key={r} className="flex items-center gap-1.5 text-sm">
-                      <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
-                      {r}
-                    </label>
-                  ))}
-                </div>
+                <RegionMultiSelect
+                  value={form.regions}
+                  onChange={(regions) => setForm({ ...form, regions })}
+                />
               </div>
 
               <div>

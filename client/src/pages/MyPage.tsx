@@ -12,12 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
 import { useEffect, useState, useRef } from "react";
 import { FileText, Loader2, User, ImagePlus, X, Save } from "lucide-react";
 import { QUOTE_STATUS_LABELS } from "@shared/constants";
-import { REGIONS } from "@shared/constants";
+import RegionMultiSelect from "@/components/RegionMultiSelect";
 import { toast } from "sonner";
 
 // ── 파트너 마이페이지 ────────────────────────────────────
@@ -80,12 +79,6 @@ function PartnerMyPage() {
     updateMut.mutate({ ...form, address: fullAddress });
   };
 
-  const toggleRegion = (r: string) => {
-    setForm((f) => ({
-      ...f,
-      regions: f.regions.includes(r) ? f.regions.filter((x) => x !== r) : [...f.regions, r],
-    }));
-  };
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!partner) return null;
@@ -170,14 +163,10 @@ function PartnerMyPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader><CardTitle className="text-base">활동 지역</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {REGIONS.map((r) => (
-              <label key={r} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <Checkbox checked={form.regions.includes(r)} onCheckedChange={() => toggleRegion(r)} />
-                {r}
-              </label>
-            ))}
-          </div>
+          <RegionMultiSelect
+            value={form.regions}
+            onChange={(regions) => setForm({ ...form, regions })}
+          />
         </CardContent>
       </Card>
 
