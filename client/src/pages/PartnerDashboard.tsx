@@ -22,6 +22,7 @@ import PortfolioManager from "@/components/PortfolioManager";
 
 export default function PartnerDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
+  const utils = trpc.useUtils();
   const params = useParams<{ tab?: string }>();
   const [, navigate] = useLocation();
   const activeTab = params.tab || "leads";
@@ -38,8 +39,14 @@ export default function PartnerDashboard() {
 
   const viewQuote = trpc.partners.viewQuote.useMutation({
     onSuccess: (data) => {
-      if (data.alreadyViewed) toast.info("이미 열람한 견적입니다");
-      else toast.success("견적을 열람했습니다. 열람권 1개가 차감되었습니다.");
+      if (data.alreadyViewed) {
+        toast.info("이미 열람한 견적입니다");
+      } else {
+        toast.success("견적을 열람했습니다");
+      }
+      // 열람 기록 + 지갑 잔액 갱신 (화면 즉시 반영)
+      utils.partners.myViews.invalidate();
+      utils.partners.me.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });

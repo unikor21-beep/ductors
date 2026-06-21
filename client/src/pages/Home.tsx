@@ -14,18 +14,25 @@ export default function Home() {
 
   // 파트너가 로그인 직후 홈에 도착하면 대시보드로 1회 이동
   useEffect(() => {
+    // user 정보가 아직 로딩 중이면 대기
     if (loading) return;
+
     const justLoggedIn = sessionStorage.getItem("justLoggedIn") === "1"
       || new URLSearchParams(window.location.search).get("justLoggedIn") === "1";
-    if (justLoggedIn) {
-      sessionStorage.removeItem("justLoggedIn");
-      // URL 파라미터 정리
-      if (window.location.search.includes("justLoggedIn")) {
-        window.history.replaceState({}, "", "/");
-      }
-      if (user?.role === "partner") {
-        navigate("/dashboard");
-      }
+    if (!justLoggedIn) return;
+
+    // 로그인 직후인데 아직 user가 안 잡혔으면 다음 렌더까지 대기 (신호 유지)
+    if (!user) return;
+
+    // 신호 소비
+    sessionStorage.removeItem("justLoggedIn");
+    if (window.location.search.includes("justLoggedIn")) {
+      window.history.replaceState({}, "", "/");
+    }
+
+    // 파트너면 대시보드로 이동
+    if (user.role === "partner") {
+      navigate("/dashboard");
     }
   }, [loading, user, navigate]);
 
