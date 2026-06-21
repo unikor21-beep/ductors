@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { UserPlus, Check, X, Loader2 } from "lucide-react";
 
@@ -27,12 +26,11 @@ export default function SignupLocal() {
     password: "",
     passwordConfirm: "",
     name: "",
+    email: "",
     phone: "",
     securityQuestion: SECURITY_QUESTIONS[0],
     securityAnswer: "",
   });
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [usernameChecked, setUsernameChecked] = useState<boolean | null>(null);
 
   // 아이디 중복확인
@@ -63,19 +61,22 @@ export default function SignupLocal() {
   });
 
   const passwordMatch = form.password && form.password === form.passwordConfirm;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   const canSubmit = usernameChecked === true && passwordMatch && form.password.length >= 8
-    && form.name && form.securityAnswer && agreeTerms && agreePrivacy;
+    && form.name && emailValid && form.phone && form.securityAnswer;
 
   const handleSubmit = () => {
     if (usernameChecked !== true) { toast.error("아이디 중복확인을 해주세요"); return; }
     if (!passwordMatch) { toast.error("비밀번호가 일치하지 않습니다"); return; }
     if (form.password.length < 8) { toast.error("비밀번호는 8자 이상이어야 합니다"); return; }
-    if (!agreeTerms || !agreePrivacy) { toast.error("필수 약관에 동의해주세요"); return; }
+    if (!emailValid) { toast.error("올바른 이메일을 입력하세요"); return; }
+    if (!form.phone) { toast.error("전화번호를 입력하세요"); return; }
     signup.mutate({
       username: form.username,
       password: form.password,
       name: form.name,
-      phone: form.phone || undefined,
+      email: form.email,
+      phone: form.phone,
       securityQuestion: form.securityQuestion,
       securityAnswer: form.securityAnswer,
     });
@@ -131,9 +132,15 @@ export default function SignupLocal() {
                 <Input placeholder="이름" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
 
-              {/* 전화번호 (선택) */}
+              {/* 이메일 */}
               <div>
-                <Label className="text-sm font-medium mb-1.5 block">전화번호 <span className="text-xs text-muted-foreground font-normal">(선택)</span></Label>
+                <Label className="text-sm font-medium mb-1.5 block">이메일 *</Label>
+                <Input type="email" placeholder="example@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+
+              {/* 전화번호 */}
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">전화번호 *</Label>
                 <Input placeholder="010-0000-0000" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
 
@@ -147,20 +154,6 @@ export default function SignupLocal() {
                   </SelectContent>
                 </Select>
                 <Input className="mt-2" placeholder="답변 입력" value={form.securityAnswer} onChange={(e) => setForm({ ...form, securityAnswer: e.target.value })} />
-              </div>
-
-              {/* 약관 동의 */}
-              <div className="pt-2 border-t border-border/40 space-y-2">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={agreeTerms} onCheckedChange={(v) => setAgreeTerms(v === true)} />
-                  <span><span className="text-destructive font-medium">[필수]</span> 서비스 이용약관 동의</span>
-                  <Link href="/terms" className="text-xs text-primary hover:underline ml-auto">보기</Link>
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={agreePrivacy} onCheckedChange={(v) => setAgreePrivacy(v === true)} />
-                  <span><span className="text-destructive font-medium">[필수]</span> 개인정보 수집·이용 동의</span>
-                  <Link href="/privacy" className="text-xs text-primary hover:underline ml-auto">보기</Link>
-                </label>
               </div>
 
               <Button className="w-full h-12 rounded-xl gap-2" disabled={!canSubmit || signup.isPending} onClick={handleSubmit}>

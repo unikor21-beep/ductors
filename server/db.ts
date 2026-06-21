@@ -60,7 +60,8 @@ export async function createLocalUser(data: {
   username: string;
   passwordHash: string;
   name: string;
-  phone?: string | null;
+  email: string;
+  phone: string;
   securityQuestion: string;
   securityAnswerHash: string;
 }) {
@@ -73,7 +74,8 @@ export async function createLocalUser(data: {
     username: data.username,
     passwordHash: data.passwordHash,
     name: data.name,
-    phone: data.phone ?? null,
+    email: data.email,
+    phone: data.phone,
     loginMethod: "local",
     securityQuestion: data.securityQuestion,
     securityAnswerHash: data.securityAnswerHash,
