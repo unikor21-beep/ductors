@@ -22,7 +22,6 @@ export default function PartnerRegister() {
   const [, navigate] = useLocation();
   const [submitted, setSubmitted] = useState(false);
   const [agreePartnerTerms, setAgreePartnerTerms] = useState(false);
-  const [agreePrivacy, setAgreePrivacy] = useState(false);
 
   const [form, setForm] = useState({
     companyName: "",
@@ -88,7 +87,7 @@ export default function PartnerRegister() {
   };
 
   const handleSubmit = () => {
-    if (!agreePartnerTerms || !agreePrivacy) { toast.error("필수 약관에 동의해주세요"); return; }
+    if (!agreePartnerTerms) { toast.error("파트너 서비스 이용약관에 동의해주세요"); return; }
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
     if (!form.businessLicenseUrl) { toast.error("사업자등록증을 첨부해주세요"); return; }
     // 주소를 합쳐서 전송
@@ -337,28 +336,13 @@ export default function PartnerRegister() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="partner-privacy"
-                    checked={agreePrivacy}
-                    onCheckedChange={(checked) => setAgreePrivacy(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1">
-                    <label htmlFor="partner-privacy" className="text-sm text-foreground cursor-pointer">
-                      <span className="text-red-500 font-medium">[필수]</span> 개인정보 수집·이용 동의
-                    </label>
-                    <Link href="/privacy" className="text-xs text-primary hover:underline ml-2">
-                      보기
-                    </Link>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      사업자등록번호, 대표자명, 연락처 등 사업자 정보의 수집·이용에 동의합니다.
-                    </p>
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground pt-1 leading-relaxed">
+                  회원가입 시 동의하신 <Link href="/privacy" className="text-primary hover:underline">개인정보처리방침</Link>에 따라
+                  파트너 가입에 필요한 사업자 정보(사업자등록번호, 대표자명, 연락처 등)가 추가로 수집됩니다.
+                </p>
               </div>
 
-              <Button onClick={handleSubmit} className="w-full" disabled={register.isPending || (!agreePartnerTerms || !agreePrivacy)}>
+              <Button onClick={handleSubmit} className="w-full" disabled={register.isPending || !agreePartnerTerms}>
                 {register.isPending ? "신청 중..." : "파트너 가입 신청"}
               </Button>
             </CardContent>
