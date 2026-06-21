@@ -110,6 +110,48 @@ export const appRouter = router({
 
   // ===================== PARTNERS =====================
   partners: router({
+    // 사업자등록번호 진위/상태 확인 (국세청 API)
+    verifyBusinessNumber: protectedProcedure
+      .input(z.object({ businessNumber: z.string() }))
+      .mutation(async ({ input }) => {
+        const serviceKey = process.env.NTS_API_KEY;
+        if (!serviceKey) {
+          return { ok: false, status: "no_key", message: "사업자 인증 서비스가 설정되지 않았습니다. 관리자에게 문의하세요." };
+        }
+        // 숫자만 추출 (하이픈 제거)
+        const bno = input.businessNumber.replace(/[^0-9]/g, "");
+        if (bno.length !== 10) {
+          return { ok: false, status: "invalid_format", message: "사업자등록번호는 숫자 10자리여야 합니다." };
+        }
+        try {
+          const res = await fetch(
+            `https://api.odcloud.kr/api/nts-businessman/v1/status?serviceKey=${serviceKey}&returnType=JSON`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({ b_no: [bno] }),
+            }
+          );
+          const data = await res.json();
+          const item = data?.data?.[0];
+          if (!item || !item.b_stt_cd) {
+            return { ok: false, status: "not_found", message: "국세청에 등록되지 않은 사업자등록번호입니다." };
+          }
+          // b_stt_cd: 01=계속사업자, 02=휴업자, 03=폐업자
+          if (item.b_stt_cd === "01") {
+            return { ok: true, status: "active", message: `정상 사업자입니다 (${item.tax_type})`, taxType: item.tax_type };
+          } else if (item.b_stt_cd === "02") {
+            return { ok: false, status: "closed_temp", message: "휴업 중인 사업자입니다." };
+          } else if (item.b_stt_cd === "03") {
+            return { ok: false, status: "closed", message: "폐업한 사업자입니다." };
+          }
+          return { ok: false, status: "unknown", message: item.b_stt || "확인할 수 없습니다." };
+        } catch (e) {
+          console.error("[사업자인증] API 오류:", e);
+          return { ok: false, status: "error", message: "인증 서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요." };
+        }
+      }),
+
     register: protectedProcedure.input(z.object({
       companyName: z.string(),
       businessNumber: z.string().optional(),

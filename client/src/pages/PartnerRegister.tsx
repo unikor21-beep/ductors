@@ -22,6 +22,8 @@ export default function PartnerRegister() {
   const [, navigate] = useLocation();
   const [submitted, setSubmitted] = useState(false);
   const [agreePartnerTerms, setAgreePartnerTerms] = useState(false);
+  const [bizVerified, setBizVerified] = useState(false);
+  const [bizVerifyMsg, setBizVerifyMsg] = useState("");
 
   const [form, setForm] = useState({
     companyName: "",
@@ -44,6 +46,20 @@ export default function PartnerRegister() {
   const [zonecode, setZonecode] = useState("");
   const [baseAddress, setBaseAddress] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
+
+  const verifyBiz = trpc.partners.verifyBusinessNumber.useMutation({
+    onSuccess: (res) => {
+      setBizVerifyMsg(res.message);
+      setBizVerified(res.ok);
+      if (res.ok) toast.success(res.message);
+      else toast.error(res.message);
+    },
+    onError: () => {
+      setBizVerified(false);
+      setBizVerifyMsg("인증 중 오류가 발생했습니다.");
+      toast.error("인증 중 오류가 발생했습니다.");
+    },
+  });
 
   const register = trpc.partners.register.useMutation({
     onSuccess: () => {
@@ -89,6 +105,7 @@ export default function PartnerRegister() {
   const handleSubmit = () => {
     if (!agreePartnerTerms) { toast.error("파트너 서비스 이용약관에 동의해주세요"); return; }
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
+    if (!bizVerified) { toast.error("사업자 번호 인증을 완료해주세요"); return; }
     if (!form.businessLicenseUrl) { toast.error("사업자등록증을 첨부해주세요"); return; }
     // 주소를 합쳐서 전송
     const fullAddress = detailAddress
@@ -177,8 +194,36 @@ export default function PartnerRegister() {
                   <Input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} placeholder="업체명" />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">사업자 번호</Label>
-                  <Input value={form.businessNumber} onChange={(e) => setForm({ ...form, businessNumber: e.target.value })} placeholder="000-00-00000" />
+                  <Label className="text-sm font-medium mb-2 block">
+                    사업자 번호
+                    {bizVerified && <span className="ml-2 text-xs text-green-600 font-medium">✓ 인증완료</span>}
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={form.businessNumber}
+                      onChange={(e) => {
+                        setForm({ ...form, businessNumber: e.target.value });
+                        setBizVerified(false);
+                        setBizVerifyMsg("");
+                      }}
+                      placeholder="000-00-00000"
+                      disabled={bizVerified}
+                    />
+                    <Button
+                      type="button"
+                      variant={bizVerified ? "outline" : "default"}
+                      onClick={() => verifyBiz.mutate({ businessNumber: form.businessNumber })}
+                      disabled={!form.businessNumber || bizVerified || verifyBiz.isPending}
+                      className="shrink-0"
+                    >
+                      {verifyBiz.isPending ? "확인 중..." : bizVerified ? "완료" : "인증"}
+                    </Button>
+                  </div>
+                  {bizVerifyMsg && (
+                    <p className={`text-xs mt-1.5 ${bizVerified ? "text-green-600" : "text-destructive"}`}>
+                      {bizVerifyMsg}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">대표자명</Label>
