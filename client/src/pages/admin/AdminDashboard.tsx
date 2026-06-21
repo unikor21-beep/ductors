@@ -16,6 +16,7 @@ import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS 
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const CategoryManager = lazy(() => import("./CategoryManager"));
+const AdminWalletManager = lazy(() => import("./AdminWalletManager"));
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -86,6 +87,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="reviews">리뷰</TabsTrigger>
               <TabsTrigger value="products">상품</TabsTrigger>
               <TabsTrigger value="categories">카테고리</TabsTrigger>
+              <TabsTrigger value="wallet">지갑 관리</TabsTrigger>
               <TabsTrigger value="backgrounds">배경 관리</TabsTrigger>
             </TabsList>
 
@@ -310,6 +312,13 @@ export default function AdminDashboard() {
             <TabsContent value="categories" className="mt-4">
               <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
                 <CategoryManager />
+              </Suspense>
+            </TabsContent>
+
+            {/* Wallet */}
+            <TabsContent value="wallet" className="mt-4">
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+                <AdminWalletManager />
               </Suspense>
             </TabsContent>
 
