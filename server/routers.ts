@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -7,6 +7,8 @@ import { z } from "zod/v4";
 import * as db from "./db";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { hashPassword, verifyPassword } from "./_core/password";
+import { sdk } from "./_core/sdk";
 
 // Admin guard middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -32,6 +34,107 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    // 아이디 중복 확인
+    checkUsername: publicProcedure
+      .input(z.object({ username: z.string().min(4).max(20) }))
+      .query(async ({ input }) => {
+        const existing = await db.getUserByUsername(input.username);
+        return { available: !existing };
+      }),
+
+    // 자체 회원가입 (아이디 + 비밀번호)
+    signup: publicProcedure
+      .input(z.object({
+        username: z.string().min(4, "아이디는 4자 이상").max(20, "아이디는 20자 이하")
+          .regex(/^[a-zA-Z0-9_]+$/, "아이디는 영문/숫자/밑줄만 가능"),
+        password: z.string().min(8, "비밀번호는 8자 이상"),
+        name: z.string().min(1, "이름을 입력하세요"),
+        phone: z.string().optional(),
+        securityQuestion: z.string().min(1, "보안 질문을 선택하세요"),
+        securityAnswer: z.string().min(1, "보안 질문 답을 입력하세요"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 아이디 중복 확인
+        const existing = await db.getUserByUsername(input.username);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 사용 중인 아이디입니다" });
+        }
+        // 비밀번호 + 보안답변 해싱
+        const passwordHash = await hashPassword(input.password);
+        const securityAnswerHash = await hashPassword(input.securityAnswer.trim().toLowerCase());
+
+        const openId = await db.createLocalUser({
+          username: input.username,
+          passwordHash,
+          name: input.name,
+          phone: input.phone ?? null,
+          securityQuestion: input.securityQuestion,
+          securityAnswerHash,
+        });
+        if (!openId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "가입 처리 중 오류" });
+
+        // 세션 발급 (자동 로그인)
+        const sessionToken = await sdk.createSessionToken(openId, { name: input.name, expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true };
+      }),
+
+    // 자체 로그인
+    login: publicProcedure
+      .input(z.object({ username: z.string(), password: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserByUsername(input.username);
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "아이디 또는 비밀번호가 일치하지 않습니다" });
+        }
+        const valid = await verifyPassword(input.password, user.passwordHash);
+        if (!valid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "아이디 또는 비밀번호가 일치하지 않습니다" });
+        }
+        // 세션 발급
+        const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true };
+      }),
+
+    // 비밀번호 찾기 1단계: 아이디 입력 → 보안 질문 반환
+    getSecurityQuestion: publicProcedure
+      .input(z.object({ username: z.string() }))
+      .query(async ({ input }) => {
+        const user = await db.getUserByUsername(input.username);
+        if (!user || !user.securityQuestion) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "해당 아이디를 찾을 수 없습니다" });
+        }
+        return { question: user.securityQuestion };
+      }),
+
+    // 비밀번호 찾기 2단계: 보안 답변 확인 → 비밀번호 재설정
+    resetPassword: publicProcedure
+      .input(z.object({
+        username: z.string(),
+        securityAnswer: z.string(),
+        newPassword: z.string().min(8, "비밀번호는 8자 이상"),
+      }))
+      .mutation(async ({ input }) => {
+        const user = await db.getUserByUsername(input.username);
+        if (!user || !user.securityAnswerHash) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "해당 아이디를 찾을 수 없습니다" });
+        }
+        // 보안 답변 검증
+        const valid = await verifyPassword(input.securityAnswer.trim().toLowerCase(), user.securityAnswerHash);
+        if (!valid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "보안 질문의 답이 일치하지 않습니다" });
+        }
+        // 비밀번호 재설정
+        const newHash = await hashPassword(input.newPassword);
+        await db.updateUserPassword(user.id, newHash);
+        return { success: true };
+      }),
   }),
 
   // ===================== CATEGORIES =====================

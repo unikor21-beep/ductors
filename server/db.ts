@@ -47,6 +47,49 @@ export async function getUserByOpenId(openId: string) {
   return r[0];
 }
 
+// 아이디(username)로 조회 - 자체 로그인용
+export async function getUserByUsername(username: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(users).where(eq(users.username, username)).limit(1);
+  return r[0];
+}
+
+// 자체 회원가입 (아이디+비번)
+export async function createLocalUser(data: {
+  username: string;
+  passwordHash: string;
+  name: string;
+  phone?: string | null;
+  securityQuestion: string;
+  securityAnswerHash: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  // openId는 local_ 접두사로 고유 부여
+  const openId = `local_${data.username}`;
+  await db.insert(users).values({
+    openId,
+    username: data.username,
+    passwordHash: data.passwordHash,
+    name: data.name,
+    phone: data.phone ?? null,
+    loginMethod: "local",
+    securityQuestion: data.securityQuestion,
+    securityAnswerHash: data.securityAnswerHash,
+    lastSignedIn: new Date(),
+  });
+  return openId;
+}
+
+// 비밀번호 재설정
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
+
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
