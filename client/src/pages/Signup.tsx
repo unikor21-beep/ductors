@@ -129,9 +129,12 @@ export default function Signup() {
               </div>
               <div className="flex items-start gap-3">
                 <Checkbox id="agree-marketing" checked={agreeMarketing} onCheckedChange={(c) => handleIndividualChange("marketing", c === true)} className="mt-0.5" />
-                <label htmlFor="agree-marketing" className="text-sm cursor-pointer">
-                  <span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의
-                </label>
+                <div className="flex-1">
+                  <label htmlFor="agree-marketing" className="text-sm cursor-pointer">
+                    <span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의
+                  </label>
+                  <Link href="/marketing" className="text-xs text-primary hover:underline ml-2">보기</Link>
+                </div>
               </div>
             </CardContent>
           </Card>
