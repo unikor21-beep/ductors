@@ -28,6 +28,7 @@ export default function PartnerDashboard() {
 
   const { data: partner, isLoading: partnerLoading } = trpc.partners.me.useQuery(undefined, { enabled: isAuthenticated });
   const { data: publicQuotes } = trpc.quotes.publicList.useQuery(undefined, { enabled: isAuthenticated && !!partner });
+  const { data: designatedQuotes } = trpc.quotes.designatedList.useQuery(undefined, { enabled: isAuthenticated && !!partner });
   const { data: mySubmissions } = trpc.partners.mySubmissions.useQuery(undefined, { enabled: isAuthenticated && !!partner });
   const { data: myViews } = trpc.partners.myViews.useQuery(undefined, { enabled: isAuthenticated && !!partner });
   const { data: myProjects } = trpc.projects.myProjects.useQuery(undefined, { enabled: isAuthenticated && !!partner });
@@ -102,6 +103,69 @@ export default function PartnerDashboard() {
   }
 
   const viewedQuoteIds = new Set((myViews || []).map((v) => v.quoteId));
+
+  // 견적 카드 렌더링 (지정/공개 공용)
+  const renderQuoteCard = (q: any, isDesignated: boolean) => {
+    const viewed = viewedQuoteIds.has(q.id);
+    return (
+      <Card key={q.id} className={`shadow-sm ${isDesignated ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"}`}>
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {isDesignated && <Badge className="bg-primary text-[10px]">지정</Badge>}
+                <h3 className="font-semibold text-foreground">{viewed ? q.title : "***"}</h3>
+              </div>
+              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                <span>{q.region || "미지정"}</span>
+                <span>{new Date(q.createdAt).toLocaleDateString("ko-KR")}</span>
+                <Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge>
+              </div>
+              {viewed && q.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{q.description}</p>}
+              {!viewed && isDesignated && <p className="text-xs text-primary mt-2">고객이 회원님을 지정하여 요청한 견적입니다.</p>}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              {!viewed && (
+                <Button size="sm" variant="outline" onClick={() => viewQuote.mutate({ quoteId: q.id })} disabled={viewQuote.isPending}>
+                  <Eye className="w-4 h-4 mr-1" /> 열람
+                </Button>
+              )}
+              {viewed && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" onClick={() => setSubmitForm({ quoteId: q.id, amount: "", description: "", estimatedDays: 0 })}>
+                      <Send className="w-4 h-4 mr-1" /> 견적 제출
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>견적 제출</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm mb-2 block">견적 금액</Label>
+                        <Input placeholder="예: 3,000,000" value={submitForm.amount} onChange={(e) => setSubmitForm({ ...submitForm, amount: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-sm mb-2 block">예상 소요일</Label>
+                        <Input type="number" placeholder="일" value={submitForm.estimatedDays || ""} onChange={(e) => setSubmitForm({ ...submitForm, estimatedDays: Number(e.target.value) })} />
+                      </div>
+                      <div>
+                        <Label className="text-sm mb-2 block">설명</Label>
+                        <Textarea placeholder="견적에 대한 상세 설명" value={submitForm.description} onChange={(e) => setSubmitForm({ ...submitForm, description: e.target.value })} rows={3} />
+                      </div>
+                      <Button className="w-full" onClick={() => submitQuote.mutate(submitForm)} disabled={submitQuote.isPending}>
+                        {submitQuote.isPending ? "제출 중..." : "견적 제출"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
 
   // Grade progress calculations
   const completedProgressPercent = gradeProgress?.nextRequiredCompleted
@@ -238,68 +302,51 @@ export default function PartnerDashboard() {
             </TabsList>
 
             {/* Leads */}
-            <TabsContent value="leads" className="mt-4 space-y-3">
-              {!publicQuotes || publicQuotes.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">현재 공개된 견적 요청이 없습니다</div>
-              ) : (
-                publicQuotes.map((q) => {
-                  const viewed = viewedQuoteIds.has(q.id);
-                  return (
-                    <Card key={q.id} className="border-border/50 shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">{viewed ? q.title : "***"}</h3>
-                            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                              <span>{q.region || "미지정"}</span>
-                              <span>{new Date(q.createdAt).toLocaleDateString("ko-KR")}</span>
-                              <Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge>
-                            </div>
-                            {viewed && q.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{q.description}</p>}
-                          </div>
-                          <div className="flex gap-2 shrink-0">
-                            {!viewed && (
-                              <Button size="sm" variant="outline" onClick={() => viewQuote.mutate({ quoteId: q.id })} disabled={viewQuote.isPending}>
-                                <Eye className="w-4 h-4 mr-1" /> 열람
-                              </Button>
-                            )}
-                            {viewed && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button size="sm" onClick={() => setSubmitForm({ quoteId: q.id, amount: "", description: "", estimatedDays: 0 })}>
-                                    <Send className="w-4 h-4 mr-1" /> 견적 제출
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader><DialogTitle>견적 제출</DialogTitle></DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label className="text-sm mb-2 block">견적 금액</Label>
-                                      <Input placeholder="예: 3,000,000" value={submitForm.amount} onChange={(e) => setSubmitForm({ ...submitForm, amount: e.target.value })} />
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm mb-2 block">예상 소요일</Label>
-                                      <Input type="number" placeholder="일" value={submitForm.estimatedDays || ""} onChange={(e) => setSubmitForm({ ...submitForm, estimatedDays: Number(e.target.value) })} />
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm mb-2 block">설명</Label>
-                                      <Textarea placeholder="견적에 대한 상세 설명" value={submitForm.description} onChange={(e) => setSubmitForm({ ...submitForm, description: e.target.value })} rows={3} />
-                                    </div>
-                                    <Button className="w-full" onClick={() => submitQuote.mutate(submitForm)} disabled={submitQuote.isPending}>
-                                      {submitQuote.isPending ? "제출 중..." : "견적 제출"}
-                                    </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
+            <TabsContent value="leads" className="mt-4">
+              <Tabs defaultValue="designated">
+                <TabsList className="bg-muted/50">
+                  <TabsTrigger value="designated" className="gap-1.5">
+                    지정 견적
+                    {designatedQuotes && designatedQuotes.length > 0 && (
+                      <span className="bg-primary text-primary-foreground text-[10px] rounded-full px-1.5 min-w-4 text-center">{designatedQuotes.length}</span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="public" className="gap-1.5">
+                    공개 견적
+                    {publicQuotes && publicQuotes.length > 0 && (
+                      <span className="bg-muted-foreground/20 text-[10px] rounded-full px-1.5 min-w-4 text-center">{publicQuotes.length}</span>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* 지정 견적 */}
+                <TabsContent value="designated" className="mt-4 space-y-3">
+                  <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg mb-1">
+                    <Eye className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">고객이 회원님을 직접 지정하여 요청한 견적입니다. 지정 열람가가 적용됩니다.</p>
+                  </div>
+                  {!designatedQuotes || designatedQuotes.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">아직 지정 견적 요청이 없습니다</div>
+                  ) : (
+                    designatedQuotes.map((q: any) => renderQuoteCard(q, true))
+                  )}
+                </TabsContent>
+
+                {/* 공개 견적 */}
+                <TabsContent value="public" className="mt-4 space-y-3">
+                  <div className="flex items-start gap-2 p-3 bg-muted/40 rounded-lg mb-1">
+                    <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">여러 파트너에게 공개된 견적입니다. 공개 열람가가 적용됩니다.</p>
+                  </div>
+                  {!publicQuotes || publicQuotes.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">현재 공개된 견적 요청이 없습니다</div>
+                  ) : (
+                    publicQuotes.map((q: any) => renderQuoteCard(q, false))
+                  )}
+                </TabsContent>
+              </Tabs>
             </TabsContent>
+
 
             {/* Submissions */}
             <TabsContent value="submissions" className="mt-4 space-y-3">
