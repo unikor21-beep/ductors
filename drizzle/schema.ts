@@ -110,7 +110,6 @@ export const quotes = mysqlTable("quotes", {
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   region: varchar("region", { length: 200 }),
-  businessLicenseUrl: text("businessLicenseUrl"),
   address: text("address"),
   formData: json("formData").$type<Record<string, unknown>>(),
   attachments: json("attachments").$type<string[]>(),
