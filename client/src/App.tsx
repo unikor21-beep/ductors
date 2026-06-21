@@ -23,6 +23,7 @@ const Signup = lazy(() => import("./pages/Signup"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Marketing = lazy(() => import("./pages/Marketing"));
+const PartnerTerms = lazy(() => import("./pages/PartnerTerms"));
 
 function LoadingFallback() {
   return (
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/terms" component={Terms} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/marketing" component={Marketing} />
+        <Route path="/partner-terms" component={PartnerTerms} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
