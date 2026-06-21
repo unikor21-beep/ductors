@@ -40,11 +40,18 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="border-t border-border/50 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} 덕터스. All rights reserved.</p>
-          <div className="flex items-center gap-4">
+        <div className="border-t border-border/50 mt-8 pt-6">
+          <div className="text-xs text-muted-foreground leading-relaxed mb-3 space-y-0.5">
+            <p>상호: 주식회사 멀티테크니션스 | 대표: 김재유 | 사업자등록번호: 554-87-02355</p>
+            <p>주소: 경기도 안산시 단원구 고잔로 55, B102호(고잔동, 중앙오피스텔)</p>
+            <p>통신판매업신고: <span style={{color:"#ef4444"}} title="오픈 전 신고번호 기재 필요">제0000-경기안산-0000호</span> | 고객센터: 1588-0000 | 이메일: support@ductors.co.kr</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-border/30">
+            <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} 주식회사 멀티테크니션스. All rights reserved.</p>
+            <div className="flex items-center gap-4">
             <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors no-underline">이용약관</Link>
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors no-underline">개인정보처리방침</Link>
+            </div>
           </div>
         </div>
       </div>

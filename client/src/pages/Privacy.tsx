@@ -13,7 +13,7 @@ export default function Privacy() {
           <div className="prose prose-sm max-w-none text-foreground/90 space-y-8">
             <section className="bg-muted/50 rounded-xl p-6">
               <p className="leading-relaxed text-sm">
-                덕터스(이하 "회사")는 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 하기 위하여 다음과 같이 개인정보 처리방침을 수립·공개합니다.
+                주식회사 멀티테크니션스(이하 "회사")는 환기·닥트 시공 매칭 플랫폼 "덕터스(Ductors)"를 운영하며, 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 하기 위하여 다음과 같이 개인정보 처리방침을 수립·공개합니다.
               </p>
             </section>
 

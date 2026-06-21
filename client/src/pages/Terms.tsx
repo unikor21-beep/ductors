@@ -14,7 +14,7 @@ export default function Terms() {
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">제1조 (목적)</h2>
               <p className="leading-relaxed">
-                본 약관은 덕터스(이하 "회사")가 운영하는 환기·닥트 시공 매칭 플랫폼(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+                본 약관은 주식회사 멀티테크니션스(이하 "회사")가 운영하는 환기·닥트 시공 매칭 플랫폼 "덕터스(Ductors)"(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
               </p>
             </section>
 
