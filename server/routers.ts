@@ -528,6 +528,65 @@ export const appRouter = router({
     }),
   }),
 
+  // ===================== CHAT (채팅) =====================
+  chat: router({
+    // 메시지 전송
+    send: protectedProcedure
+      .input(z.object({ quoteId: z.number(), partnerId: z.number(), message: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const quote = await db.getQuoteById(input.quoteId);
+        if (!quote) throw new TRPCError({ code: "NOT_FOUND", message: "견적을 찾을 수 없습니다" });
+
+        // 발신자 역할 판별 + 권한 체크
+        let senderRole: "customer" | "partner";
+        let senderId: number;
+        const myPartner = await db.getPartnerByUserId(ctx.user.id);
+
+        if (quote.customerId === ctx.user.id) {
+          // 고객 (본인 의뢰)
+          senderRole = "customer";
+          senderId = ctx.user.id;
+        } else if (myPartner && myPartner.id === input.partnerId) {
+          // 파트너 (본인 방)
+          senderRole = "partner";
+          senderId = myPartner.id;
+        } else {
+          throw new TRPCError({ code: "FORBIDDEN", message: "채팅 권한이 없습니다" });
+        }
+
+        await db.sendChatMessage({ quoteId: input.quoteId, partnerId: input.partnerId, senderRole, senderId, message: input.message });
+        return { success: true };
+      }),
+
+    // 특정 채팅방 메시지 목록
+    messages: protectedProcedure
+      .input(z.object({ quoteId: z.number(), partnerId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const quote = await db.getQuoteById(input.quoteId);
+        if (!quote) return [];
+        const myPartner = await db.getPartnerByUserId(ctx.user.id);
+        // 권한: 본인 의뢰 고객이거나, 본인 방 파트너
+        const allowed = quote.customerId === ctx.user.id || (myPartner && myPartner.id === input.partnerId);
+        if (!allowed) throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getChatMessages(input.quoteId, input.partnerId);
+      }),
+
+    // 고객용: 한 의뢰의 채팅방 목록 (견적 보낸 파트너들)
+    roomsByQuote: protectedProcedure
+      .input(z.object({ quoteId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const quote = await db.getQuoteById(input.quoteId);
+        if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getChatRoomsByQuote(input.quoteId);
+      }),
+
+    // 파트너용: 내가 참여한 채팅방 목록
+    roomsByPartner: partnerProcedure.query(async ({ ctx }) => {
+      if (!ctx.partner) return [];
+      return db.getChatRoomsByPartner(ctx.partner.id);
+    }),
+  }),
+
   // ===================== REVIEWS =====================
   reviews: router({
     create: protectedProcedure.input(z.object({ quoteId: z.number(), partnerId: z.number(), rating: z.number().min(1).max(5), content: z.string().optional() })).mutation(async ({ ctx, input }) => {

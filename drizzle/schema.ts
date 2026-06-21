@@ -155,6 +155,23 @@ export const quoteSubmissions = mysqlTable("quoteSubmissions", {
 export type QuoteSubmission = typeof quoteSubmissions.$inferSelect;
 
 // ============================================================
+// 7-2. CHAT MESSAGES (의뢰별 채팅 - quoteId+partnerId로 방 구분)
+// ============================================================
+export const chatMessages = mysqlTable("chatMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  quoteId: int("quoteId").notNull(),
+  partnerId: int("partnerId").notNull(),
+  senderRole: mysqlEnum("senderRole", ["customer", "partner"]).notNull(),
+  senderId: int("senderId").notNull(), // customer면 userId, partner면 partnerId
+  message: text("message").notNull(),
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = typeof chatMessages.$inferInsert;
+
+// ============================================================
 // 8. REVIEWS (리뷰)
 // ============================================================
 export const reviews = mysqlTable("reviews", {

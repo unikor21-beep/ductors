@@ -9,9 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import QuoteDetailModal from "@/components/QuoteDetailModal";
+import ChatModal from "@/components/ChatModal";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -51,17 +52,13 @@ export default function PartnerDashboard() {
     onError: (e) => toast.error(e.message),
   });
 
-  const submitQuote = trpc.partners.submitQuote.useMutation({
-    onSuccess: () => toast.success("견적이 제출되었습니다!"),
-    onError: (e) => toast.error(e.message),
-  });
-
   const purchaseProduct = trpc.partners.purchaseProduct.useMutation({
     onSuccess: () => toast.success("구매가 완료되었습니다!"),
     onError: (e) => toast.error(e.message),
   });
 
-  const [submitForm, setSubmitForm] = useState({ quoteId: 0, amount: "", description: "", estimatedDays: 0 });
+  const [detailQuoteId, setDetailQuoteId] = useState<number | null>(null); // 상세 모달
+  const [chatRoom, setChatRoom] = useState<{ quoteId: number; partnerId: number } | null>(null); // 채팅 모달
 
   useEffect(() => {
     if (!loading && !isAuthenticated) window.location.href = getLoginUrl();
@@ -121,50 +118,31 @@ export default function PartnerDashboard() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 {isDesignated && <Badge className="bg-primary text-[10px]">지정</Badge>}
-                <h3 className="font-semibold text-foreground">{viewed ? q.title : "***"}</h3>
+                {viewed ? (
+                  <button onClick={() => setDetailQuoteId(q.id)} className="font-semibold text-foreground hover:text-primary hover:underline text-left">
+                    {q.title}
+                  </button>
+                ) : (
+                  <h3 className="font-semibold text-muted-foreground">*** (열람 후 확인 가능)</h3>
+                )}
               </div>
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                 <span>{q.region || "미지정"}</span>
                 <span>{new Date(q.createdAt).toLocaleDateString("ko-KR")}</span>
-                <Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge>
+                <Badge variant="secondary">{viewed ? "열람 완료" : (QUOTE_STATUS_LABELS[q.status] || q.status)}</Badge>
               </div>
               {viewed && q.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{q.description}</p>}
               {!viewed && isDesignated && <p className="text-xs text-primary mt-2">고객이 회원님을 지정하여 요청한 견적입니다.</p>}
             </div>
             <div className="flex gap-2 shrink-0">
-              {!viewed && (
+              {!viewed ? (
                 <Button size="sm" variant="outline" onClick={() => viewQuote.mutate({ quoteId: q.id })} disabled={viewQuote.isPending}>
                   <Eye className="w-4 h-4 mr-1" /> 열람
                 </Button>
-              )}
-              {viewed && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" onClick={() => setSubmitForm({ quoteId: q.id, amount: "", description: "", estimatedDays: 0 })}>
-                      <Send className="w-4 h-4 mr-1" /> 견적 제출
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>견적 제출</DialogTitle></DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm mb-2 block">견적 금액</Label>
-                        <Input placeholder="예: 3,000,000" value={submitForm.amount} onChange={(e) => setSubmitForm({ ...submitForm, amount: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label className="text-sm mb-2 block">예상 소요일</Label>
-                        <Input type="number" placeholder="일" value={submitForm.estimatedDays || ""} onChange={(e) => setSubmitForm({ ...submitForm, estimatedDays: Number(e.target.value) })} />
-                      </div>
-                      <div>
-                        <Label className="text-sm mb-2 block">설명</Label>
-                        <Textarea placeholder="견적에 대한 상세 설명" value={submitForm.description} onChange={(e) => setSubmitForm({ ...submitForm, description: e.target.value })} rows={3} />
-                      </div>
-                      <Button className="w-full" onClick={() => submitQuote.mutate(submitForm)} disabled={submitQuote.isPending}>
-                        {submitQuote.isPending ? "제출 중..." : "견적 제출"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setDetailQuoteId(q.id)}>
+                  상세 보기
+                </Button>
               )}
             </div>
           </div>
@@ -412,6 +390,31 @@ export default function PartnerDashboard() {
           </Tabs>
         </div>
       </main>
+
+      {/* 견적 상세 모달 */}
+      {detailQuoteId && partner && (
+        <QuoteDetailModal
+          quoteId={detailQuoteId}
+          partnerId={partner.id}
+          onClose={() => setDetailQuoteId(null)}
+          onOpenChat={() => {
+            setChatRoom({ quoteId: detailQuoteId, partnerId: partner.id });
+            setDetailQuoteId(null);
+          }}
+        />
+      )}
+
+      {/* 채팅 모달 */}
+      {chatRoom && (
+        <ChatModal
+          quoteId={chatRoom.quoteId}
+          partnerId={chatRoom.partnerId}
+          myRole="partner"
+          title="고객과의 채팅"
+          onClose={() => setChatRoom(null)}
+        />
+      )}
+
       <Footer />
     </div>
   );

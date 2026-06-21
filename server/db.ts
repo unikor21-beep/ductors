@@ -2,7 +2,7 @@ import { eq, desc, asc, and, or, sql, like, inArray, isNull } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, partners, categories, categoryFields,
-  quotes, quoteViews, quoteSubmissions, reviews, portfolios,
+  quotes, quoteViews, quoteSubmissions, reviews, portfolios, chatMessages,
   products, orders, siteSettings, projectManagement,
   userConsents, coupons, userCoupons,
   walletTransactions, pointBatches, walletSettings, signupBonusCampaigns
@@ -400,6 +400,77 @@ export async function getSubmissionsByQuote(quoteId: number) {
   if (!db) return [];
   return db.select().from(quoteSubmissions).where(eq(quoteSubmissions.quoteId, quoteId)).orderBy(desc(quoteSubmissions.createdAt));
 }
+
+// ===================== CHAT (채팅) =====================
+// 메시지 전송
+export async function sendChatMessage(data: {
+  quoteId: number;
+  partnerId: number;
+  senderRole: "customer" | "partner";
+  senderId: number;
+  message: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(chatMessages).values(data).$returningId();
+  return result.id;
+}
+
+// 특정 채팅방(의뢰+파트너) 메시지 목록
+export async function getChatMessages(quoteId: number, partnerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(chatMessages)
+    .where(and(eq(chatMessages.quoteId, quoteId), eq(chatMessages.partnerId, partnerId)))
+    .orderBy(asc(chatMessages.createdAt));
+}
+
+// 한 의뢰의 모든 채팅방 목록 (고객용 - 견적 보낸 파트너들)
+// 각 방의 마지막 메시지 + 파트너 정보 포함
+export async function getChatRoomsByQuote(quoteId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // 이 의뢰에 메시지를 보낸 파트너 목록
+  const msgs = await db.select().from(chatMessages)
+    .where(eq(chatMessages.quoteId, quoteId))
+    .orderBy(desc(chatMessages.createdAt));
+  // 파트너별로 그룹핑 (마지막 메시지)
+  const roomMap = new Map<number, any>();
+  for (const m of msgs) {
+    if (!roomMap.has(m.partnerId)) {
+      roomMap.set(m.partnerId, { partnerId: m.partnerId, lastMessage: m.message, lastAt: m.createdAt });
+    }
+  }
+  // 파트너 정보 붙이기
+  const rooms = [];
+  for (const [partnerId, room] of roomMap) {
+    const [p] = await db.select().from(partners).where(eq(partners.id, partnerId));
+    rooms.push({ ...room, partner: p ? { id: p.id, companyName: p.companyName, logoUrl: p.logoUrl, avgRating: p.avgRating, reviewCount: p.reviewCount } : null });
+  }
+  return rooms;
+}
+
+// 파트너가 참여한 채팅방 목록 (파트너용)
+export async function getChatRoomsByPartner(partnerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const msgs = await db.select().from(chatMessages)
+    .where(eq(chatMessages.partnerId, partnerId))
+    .orderBy(desc(chatMessages.createdAt));
+  const roomMap = new Map<number, any>();
+  for (const m of msgs) {
+    if (!roomMap.has(m.quoteId)) {
+      roomMap.set(m.quoteId, { quoteId: m.quoteId, lastMessage: m.message, lastAt: m.createdAt });
+    }
+  }
+  const rooms = [];
+  for (const [quoteId, room] of roomMap) {
+    const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId));
+    rooms.push({ ...room, quote: q ? { id: q.id, title: q.title, region: q.region } : null });
+  }
+  return rooms;
+}
+
 
 export async function getSubmissionsByPartner(partnerId: number) {
   const db = await getDb();
