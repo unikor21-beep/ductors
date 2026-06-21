@@ -141,7 +141,12 @@ export async function getPartnerById(id: number) {
 export async function getApprovedPartners(region?: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(partners).where(eq(partners.status, "approved")).orderBy(desc(partners.avgRating));
+  // 정렬: ① 평점 높은순 (단, 리뷰 0건 신규 파트너는 3.0 기본점으로 취급)
+  //       ② 평점 같으면 리뷰 많은순
+  const sortRating = sql`CASE WHEN ${partners.reviewCount} = 0 OR ${partners.reviewCount} IS NULL THEN 3.0 ELSE ${partners.avgRating} END`;
+  return db.select().from(partners)
+    .where(eq(partners.status, "approved"))
+    .orderBy(desc(sortRating), desc(partners.reviewCount));
 }
 
 export async function getAllPartners() {

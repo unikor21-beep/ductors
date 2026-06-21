@@ -73,7 +73,11 @@ export default function FindPartner() {
         (p.shortIntro || "").toLowerCase().includes(searchText.toLowerCase())
       );
     }
-    if (sortBy === "rating") result.sort((a, b) => Number(b.avgRating || 0) - Number(a.avgRating || 0));
+    if (sortBy === "rating") {
+      // 평점 높은순 (리뷰 0건 신규는 3.0 기본점), 같으면 리뷰 많은순
+      const score = (p: any) => (!p.reviewCount ? 3.0 : Number(p.avgRating || 0));
+      result.sort((a, b) => score(b) - score(a) || (b.reviewCount || 0) - (a.reviewCount || 0));
+    }
     else if (sortBy === "reviews") result.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
     else if (sortBy === "recent") result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return result;
