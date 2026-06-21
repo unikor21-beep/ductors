@@ -17,6 +17,13 @@ export default function PartnerDetail() {
   const { data: partner, isLoading } = trpc.partners.getById.useQuery({ id: partnerId });
   const { data: reviews } = trpc.reviews.byPartner.useQuery({ partnerId });
   const { data: portfolios } = trpc.portfolios.byPartner.useQuery({ partnerId });
+  const { data: allCategories } = trpc.categories.list.useQuery();
+
+  // 전문분야 값이 카테고리 ID(숫자)면 이름으로 변환, 아니면 그대로 (옛날 텍스트 호환)
+  const specialtyLabel = (s: string) => {
+    const cat = (allCategories || []).find((c: any) => String(c.id) === String(s));
+    return cat ? cat.name : s;
+  };
 
   if (isLoading) {
     return (
@@ -114,8 +121,8 @@ export default function PartnerDetail() {
                     <div className="mt-6">
                       <h3 className="text-sm font-semibold text-foreground mb-3">전문 분야</h3>
                       <div className="flex flex-wrap gap-2">
-                        {(partner.specialties as string[]).map((s) => (
-                          <Badge key={s} variant="secondary">{s}</Badge>
+                        {Array.from(new Set((partner.specialties as string[]).map(specialtyLabel))).map((label) => (
+                          <Badge key={label} variant="secondary">{label}</Badge>
                         ))}
                       </div>
                     </div>
