@@ -152,6 +152,34 @@ export default function Signup() {
                 카카오로 가입
               </button>
 
+              {/* 네이버 */}
+              <button
+                onClick={handleSignup}
+                disabled={!canProceed}
+                className={`w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm text-white transition-all ${canProceed ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"}`}
+                style={{ backgroundColor: "#03C75A" }}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M13.36 10.53L6.4 3H3v14h3.64V9.47L13.6 17H17V3h-3.64v7.53z" fill="white"/>
+                </svg>
+                네이버로 가입
+              </button>
+
+              {/* 구글 */}
+              <button
+                onClick={handleSignup}
+                disabled={!canProceed}
+                className={`w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm border border-border bg-white text-foreground transition-all ${canProceed ? "hover:bg-gray-50" : "opacity-50 cursor-not-allowed"}`}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M19.6 10.23c0-.68-.06-1.36-.17-2.02H10v3.84h5.38a4.6 4.6 0 01-2 3.02v2.5h3.24c1.89-1.74 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
+                  <path d="M10 20c2.7 0 4.96-.9 6.62-2.43l-3.24-2.5c-.9.6-2.04.95-3.38.95-2.6 0-4.8-1.76-5.58-4.12H1.08v2.58A9.99 9.99 0 0010 20z" fill="#34A853"/>
+                  <path d="M4.42 11.9A6.01 6.01 0 014.1 10c0-.66.12-1.3.32-1.9V5.52H1.08A9.99 9.99 0 000 10c0 1.61.39 3.14 1.08 4.48l3.34-2.58z" fill="#FBBC05"/>
+                  <path d="M10 3.98c1.47 0 2.78.5 3.82 1.5l2.86-2.86C14.96.99 12.7 0 10 0A9.99 9.99 0 001.08 5.52l3.34 2.58C5.2 5.74 7.4 3.98 10 3.98z" fill="#EA4335"/>
+                </svg>
+                Google로 가입
+              </button>
+
               <div className="relative my-2">
                 <Separator />
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">또는</span>
