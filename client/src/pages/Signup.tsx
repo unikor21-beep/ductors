@@ -188,9 +188,9 @@ export default function Signup() {
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">또는</span>
               </div>
 
-              <Button onClick={handleSignup} disabled={!canProceed} className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
+              <Button onClick={() => { if (!canProceed) { toast.error("필수 약관에 동의해주세요"); return; } window.location.href = "/signup-local"; }} disabled={!canProceed} className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
                 <UserPlus className="w-4 h-4" />
-                이메일로 가입
+                아이디로 가입
               </Button>
 
               {!canProceed && (

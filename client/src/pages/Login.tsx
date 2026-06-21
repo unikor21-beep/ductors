@@ -84,13 +84,13 @@ export default function Login() {
                 </span>
               </div>
 
-              {/* Manus OAuth Login */}
-              <a href={getLoginUrl()} className="block">
+              {/* 아이디 로그인 */}
+              <Link href="/login-local" className="block">
                 <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
                   <LogIn className="w-4 h-4" />
-                  이메일로 로그인
+                  아이디로 로그인
                 </Button>
-              </a>
+              </Link>
 
               {/* Sign Up Link */}
               <div className="text-center pt-2">
