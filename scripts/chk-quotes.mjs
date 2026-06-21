@@ -1,0 +1,14 @@
+import mysql from 'mysql2/promise';
+import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, '../.env') });
+const conn = await mysql.createConnection(process.env.DATABASE_URL + '?charset=utf8mb4');
+console.log('DB 연결 성공\n');
+const [count] = await conn.execute("SELECT COUNT(*) as cnt FROM quotes");
+console.log(`전체 견적 개수: ${count[0].cnt}건\n`);
+const [quotes] = await conn.execute("SELECT id, title, type, status, customerId, designatedPartnerId, createdAt FROM quotes ORDER BY createdAt DESC LIMIT 15");
+console.log('=== 견적 목록 ===');
+quotes.forEach(q => console.log(`  id=${q.id} "${q.title}" type=${q.type} status=${q.status} 의뢰자=${q.customerId} 지정파트너=${q.designatedPartnerId}`));
+await conn.end();
