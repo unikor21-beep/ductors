@@ -16,7 +16,7 @@ import { Building2, CheckCircle2, ImagePlus, X, FileText, AlertCircle } from "lu
 import { REGIONS, REGION_GROUPS } from "@shared/constants";
 
 export default function PartnerRegister() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const [, navigate] = useLocation();
   const [submitted, setSubmitted] = useState(false);
   const [agreePartnerTerms, setAgreePartnerTerms] = useState(false);
@@ -76,6 +76,20 @@ export default function PartnerRegister() {
       navigate("/signup");
     }
   }, [loading, isAuthenticated, navigate]);
+
+  // 회원가입 시 제출한 정보(이메일/전화번호/이름)를 자동으로 채움
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (user && !prefilled) {
+      setForm((f) => ({
+        ...f,
+        email: f.email || (user as any).email || "",
+        phone: f.phone || (user as any).phone || "",
+        representativeName: f.representativeName || (user as any).name || "",
+      }));
+      setPrefilled(true);
+    }
+  }, [user, prefilled]);
 
   if (loading) return null;
   if (!isAuthenticated) return null;
@@ -232,12 +246,16 @@ export default function PartnerRegister() {
                   <Input value={form.representativeName} onChange={(e) => setForm({ ...form, representativeName: e.target.value })} placeholder="대표자명" />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">연락처</Label>
+                  <Label className="text-sm font-medium mb-2 block">
+                    연락처 <span className="text-xs text-muted-foreground font-normal">(회원정보에서 자동입력, 수정 가능)</span>
+                  </Label>
                   <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="010-0000-0000" />
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium mb-2 block">이메일</Label>
+                <Label className="text-sm font-medium mb-2 block">
+                  이메일 <span className="text-xs text-muted-foreground font-normal">(회원정보에서 자동입력, 수정 가능)</span>
+                </Label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
               </div>
 
