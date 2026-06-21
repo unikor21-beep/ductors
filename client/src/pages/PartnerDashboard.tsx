@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import WalletPanel from "@/components/WalletPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -233,6 +234,7 @@ export default function PartnerDashboard() {
               <TabsTrigger value="submissions">제출 견적</TabsTrigger>
               <TabsTrigger value="projects">현장 관리</TabsTrigger>
               <TabsTrigger value="portfolios">포트폴리오</TabsTrigger>
+              <TabsTrigger value="wallet">지갑</TabsTrigger>
               <TabsTrigger value="shop">상품 구매</TabsTrigger>
             </TabsList>
 
@@ -350,6 +352,10 @@ export default function PartnerDashboard() {
             </TabsContent>
 
             {/* Shop */}
+            <TabsContent value="wallet" className="mt-4">
+              <WalletPanel />
+            </TabsContent>
+
             <TabsContent value="shop" className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(products || []).map((p) => (
