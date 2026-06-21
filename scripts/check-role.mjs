@@ -1,0 +1,11 @@
+import mysql from 'mysql2/promise';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '/home/claude/ductors/.env' });
+const conn = await mysql.createConnection(process.env.DATABASE_URL + '?charset=utf8mb4');
+const [users] = await conn.execute("SELECT id, openId, name, role, username FROM users WHERE role='partner' OR openId LIKE '%kakao%' LIMIT 10");
+console.log('파트너/카카오 계정:');
+users.forEach(u => console.log(`  id=${u.id}, role=${u.role}, openId=${u.openId}, name=${u.name}, username=${u.username || '-'}`));
+const [partners] = await conn.execute("SELECT id, userId, companyName, status FROM partners LIMIT 10");
+console.log('\n파트너 테이블:');
+partners.forEach(p => console.log(`  id=${p.id}, userId=${p.userId}, company=${p.companyName}, status=${p.status}`));
+await conn.end();
