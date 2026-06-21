@@ -90,7 +90,7 @@ export function registerKakaoOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect(302, "/?justLoggedIn=1");
     } catch (error: any) {
       console.error("[Kakao OAuth] Callback failed", error?.response?.data ?? error);
       res.status(500).json({ error: "Kakao OAuth callback failed" });
