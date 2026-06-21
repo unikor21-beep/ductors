@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
 import { useEffect, useState, useRef } from "react";
-import { FileText, Loader2, User, ImagePlus, X, Save } from "lucide-react";
+import { FileText, Loader2, User, ImagePlus, X, Save, AlertTriangle } from "lucide-react";
 import { QUOTE_STATUS_LABELS } from "@shared/constants";
 import { REGIONS, REGION_GROUPS } from "@shared/constants";
 import { toast } from "sonner";
@@ -241,20 +241,43 @@ function PartnerMyPage() {
 }
 
 // ── 일반 사용자 마이페이지 ───────────────────────────────
-function UserMyPage({ userName, userEmail }: { userName: string; userEmail: string }) {
+function UserMyPage({ user }: { user: any }) {
   const { isAuthenticated } = useAuth();
+  const utils = trpc.useUtils();
   const { data: myQuotes, isLoading: quotesLoading } = trpc.quotes.myQuotes.useQuery(undefined, { enabled: isAuthenticated });
+
+  // 정보 수정 폼
+  const [profile, setProfile] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+  });
+  const [showConvertWarning, setShowConvertWarning] = useState(false);
+
+  const updateProfile = trpc.auth.updateProfile.useMutation({
+    onSuccess: () => {
+      toast.success("정보가 수정되었습니다");
+      utils.auth.me.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleSaveProfile = () => {
+    if (!profile.name) { toast.error("이름을 입력하세요"); return; }
+    updateProfile.mutate(profile);
+  };
 
   return (
     <div className="space-y-5">
+      {/* 프로필 헤더 */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-6 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">{userName || "사용자"}</h2>
-            <p className="text-sm text-muted-foreground">{userEmail}</p>
+            <h2 className="text-xl font-bold">{user?.name || "사용자"}</h2>
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
         </CardContent>
       </Card>
@@ -262,7 +285,10 @@ function UserMyPage({ userName, userEmail }: { userName: string; userEmail: stri
       <Tabs defaultValue="quotes">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="quotes">내 견적 요청</TabsTrigger>
+          <TabsTrigger value="profile">정보 수정</TabsTrigger>
         </TabsList>
+
+        {/* 내 견적 요청 */}
         <TabsContent value="quotes" className="mt-4">
           {quotesLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
@@ -294,6 +320,64 @@ function UserMyPage({ userName, userEmail }: { userName: string; userEmail: stri
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* 정보 수정 */}
+        <TabsContent value="profile" className="mt-4 space-y-5">
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader><CardTitle className="text-base">내 정보 수정</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">이름</Label>
+                <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="이름" />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">이메일</Label>
+                <Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} placeholder="email@example.com" />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">전화번호</Label>
+                <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="010-0000-0000" />
+              </div>
+              <Button onClick={handleSaveProfile} className="w-full gap-2" disabled={updateProfile.isPending}>
+                {updateProfile.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                변경사항 저장
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* 파트너 전환 */}
+          <Card className="border-primary/20 shadow-sm">
+            <CardHeader><CardTitle className="text-base">파트너로 전환</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                시공업체로 활동하시려면 파트너로 전환하세요. 견적을 받고 시공 매칭에 참여할 수 있습니다.
+              </p>
+              {!showConvertWarning ? (
+                <Button variant="outline" className="w-full" onClick={() => setShowConvertWarning(true)}>
+                  파트너로 전환하기
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-700 leading-relaxed">
+                      <strong>주의:</strong> 파트너로 전환하면 <strong>견적 의뢰 기능을 더 이상 사용할 수 없습니다.</strong>
+                      파트너는 견적을 받는 입장이 되며, 고객으로서 견적을 요청하는 기능이 제한됩니다.
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowConvertWarning(false)}>
+                      취소
+                    </Button>
+                    <Link href="/partner-register" className="flex-1">
+                      <Button className="w-full">파트너 가입 신청 진행</Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
@@ -327,7 +411,7 @@ export default function MyPage() {
           </div>
           {isPartner
             ? <PartnerMyPage />
-            : <UserMyPage userName={user?.name || ""} userEmail={user?.email || ""} />
+            : <UserMyPage user={user} />
           }
         </div>
       </main>

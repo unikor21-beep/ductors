@@ -29,6 +29,22 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+
+    // 고객 프로필 수정 (이름/이메일/전화번호)
+    updateProfile: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1, "이름을 입력하세요").optional(),
+        email: z.string().email("올바른 이메일 형식이 아닙니다").optional().or(z.literal("")),
+        phone: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserProfile(ctx.user.id, {
+          name: input.name,
+          email: input.email || undefined,
+          phone: input.phone,
+        });
+        return { success: true };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
