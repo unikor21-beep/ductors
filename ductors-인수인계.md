@@ -5,6 +5,34 @@
 
 ---
 
+## 🔴 다음 세션에서 가장 먼저 풀 미해결 과제
+
+### 1. [최우선] 고객 마이페이지에 "내 견적 요청"이 0건으로 나옴 (데이터는 멀쩡)
+- **증상**: 고객1(local_customer1, userId=697)로 로그인 → 마이페이지 "내 견적 요청" 탭에 "아직 견적 요청이 없습니다" 표시
+- **확인된 사실**:
+  - DB에 견적 8건 전부 존재 (삭제 안 됨). 그중 697이 의뢰한 것 5건(id 4,5,6,7,8)
+  - 697 계정: role=user, deletedAt=null, 정상. 중복 계정 없음(이메일 bill.ju1007@gmail.com 단일)
+  - 코드 로직은 정상으로 보임: myQuotes(`server/routers.ts`) → getQuotesByCustomer(ctx.user.id), 마이페이지(`MyPage.tsx` 247번)
+- **마지막 디버그 시도**: myQuotes에 `console.log`로 ctx.user.id/openId/조회건수 찍는 로그를 심었으나, 대표님이 서버 재시작 후 로그를 확인하기 전에 세션 종료. (그 디버그 로그는 이번에 원복함)
+- **다음 액션**: myQuotes 디버그 로그를 다시 심고, 서버 터미널에서 `[myQuotes 디버그] user.id=?, openId=?, 조회=?건` 확인.
+  - user.id가 697이 아니면 → **세션/로그인 매핑 문제** (자체로그인 시 ctx.user.id가 잘못 잡힘)
+  - user.id=697인데 0건이면 → getQuotesByCustomer 쿼리 문제
+  - 697인데 5건이면 → 프론트 캐시/렌더 문제
+- **추가 단서**: 대표님 말씀 - "1.technicians를 customer1이 지정했는데 둘 다 대시보드에서 안 보임. customer1로 공개+지정한 것이 1.technicians 대시보드엔 여전히 보이는데 customer1 본인 마이페이지에선 지정도 공개도 다 사라짐" → customer1의 myQuotes만 빈 결과. 파트너(1.technicians=partnerId 1) 쪽은 정상 노출.
+- **세션 종료 시점 첨부화면**: 고객1 마이페이지 "아직 견적 요청이 없습니다" + 서버 터미널 화면(디버그 로그 확인하려던 시점)
+
+### 2. 첨부 사진 표시 - 수정했으나 미검증
+- 견적 생성 시 attachments(사진) 전송 누락을 수정함(QuoteRequest.tsx에 `attachments,` 추가, 커밋 7b3de60)
+- **단, 사진 첨부한 새 견적으로 파트너 상세에서 사진 보이는지 최종 확인 못 함**
+
+### 3. 지정 견적 노출 - 데이터는 정상, 표시 미확인
+- DB상 지정견적(id 5,6,8)은 designatedPartnerId=1로 정상 저장됨
+- partnerId=1 파트너 대시보드 "지정 견적" 탭에 보여야 하나 최종 확인 못 함 (1번 과제와 연관 가능성)
+
+---
+
+---
+
 ## 1. 비즈니스 개요
 
 - **서비스명**: 덕터스(Ductors) — 환기·닥트 시공 견적 매칭 플랫폼
