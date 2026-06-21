@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Send, MessageCircle, MapPin, Calendar, Loader2, X } from "lucide-react";
+import { Send, MessageCircle, MapPin, Calendar, Loader2, X, Tag } from "lucide-react";
 
 interface Props {
   quoteId: number;
@@ -20,8 +20,21 @@ interface Props {
 export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenChat }: Props) {
   const utils = trpc.useUtils();
   const { data: quote, isLoading } = trpc.quotes.detailForPartner.useQuery({ id: quoteId });
+  const { data: allCategories } = trpc.categories.list.useQuery();
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [form, setForm] = useState({ amount: "", description: "", estimatedDays: 0 });
+
+  // 카테고리 ID → "대분류 › 소분류" 이름 변환
+  const categoryLabel = (() => {
+    if (!quote?.categoryId || !allCategories) return null;
+    const cat = (allCategories as any[]).find((c) => c.id === quote.categoryId);
+    if (!cat) return null;
+    if (cat.parentId) {
+      const parent = (allCategories as any[]).find((c) => c.id === cat.parentId);
+      return parent ? `${parent.name} › ${cat.name}` : cat.name;
+    }
+    return cat.name;
+  })();
 
   const submitQuote = trpc.partners.submitQuote.useMutation({
     onSuccess: () => {
@@ -61,6 +74,7 @@ export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenCh
             {/* 기본 정보 */}
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {quote.type === "designated" && <Badge className="bg-primary">지정 견적</Badge>}
+              {categoryLabel && <span className="flex items-center gap-1"><Tag className="w-4 h-4" />{categoryLabel}</span>}
               <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{quote.region || "지역 미지정"}</span>
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(quote.createdAt).toLocaleDateString("ko-KR")}</span>
             </div>
