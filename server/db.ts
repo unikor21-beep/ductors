@@ -259,6 +259,19 @@ export async function getQuoteById(id: number) {
   return r[0] || null;
 }
 
+// 견적 + 의뢰자 정보 (파트너가 열람한 견적 상세용)
+export async function getQuoteWithCustomer(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [quote] = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
+  if (!quote) return null;
+  const [customer] = await db.select().from(users).where(eq(users.id, quote.customerId)).limit(1);
+  return {
+    ...quote,
+    customer: customer ? { name: customer.name, phone: customer.phone, email: customer.email } : null,
+  };
+}
+
 export async function getQuotesByCustomer(customerId: number) {
   const db = await getDb();
   if (!db) return [];

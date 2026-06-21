@@ -19,7 +19,7 @@ interface Props {
 // 파트너가 열람한 견적의 상세 + 견적 제출
 export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenChat }: Props) {
   const utils = trpc.useUtils();
-  const { data: quote, isLoading } = trpc.quotes.getById.useQuery({ id: quoteId });
+  const { data: quote, isLoading } = trpc.quotes.detailForPartner.useQuery({ id: quoteId });
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [form, setForm] = useState({ amount: "", description: "", estimatedDays: 0 });
 
@@ -65,6 +65,18 @@ export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenCh
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(quote.createdAt).toLocaleDateString("ko-KR")}</span>
             </div>
 
+            {/* 의뢰자 정보 */}
+            {quote.customer && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <Label className="text-sm font-semibold mb-2 block">의뢰자 정보</Label>
+                <div className="space-y-1 text-sm">
+                  {quote.customer.name && <p><span className="text-muted-foreground">이름: </span>{quote.customer.name}</p>}
+                  {quote.customer.phone && <p><span className="text-muted-foreground">연락처: </span>{quote.customer.phone}</p>}
+                  {quote.customer.email && <p><span className="text-muted-foreground">이메일: </span>{quote.customer.email}</p>}
+                </div>
+              </div>
+            )}
+
             {/* 주소 */}
             {quote.address && (
               <div className="bg-muted/40 rounded-lg p-3 text-sm">
@@ -79,6 +91,21 @@ export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenCh
                 {quote.description || "상세 내용이 없습니다."}
               </p>
             </div>
+
+            {/* 추가 작성 항목 (formData) */}
+            {quote.formData && Object.keys(quote.formData as Record<string, unknown>).length > 0 && (
+              <div>
+                <Label className="text-sm font-semibold mb-1.5 block">상세 항목</Label>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1.5 text-sm">
+                  {Object.entries(quote.formData as Record<string, unknown>).map(([key, value]) => (
+                    <div key={key} className="flex gap-2">
+                      <span className="text-muted-foreground shrink-0">{key}:</span>
+                      <span className="break-words">{Array.isArray(value) ? value.join(", ") : String(value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* 첨부 사진 */}
             {attachments.length > 0 && (

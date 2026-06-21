@@ -253,6 +253,18 @@ export const appRouter = router({
     }),
     myQuotes: protectedProcedure.query(async ({ ctx }) => db.getQuotesByCustomer(ctx.user.id)),
     getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => db.getQuoteById(input.id)),
+    // 파트너용 상세 (열람한 견적만 의뢰자 정보 포함)
+    detailForPartner: partnerProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
+      if (!ctx.partner) throw new TRPCError({ code: "NOT_FOUND" });
+      // 열람 여부 확인 - 열람하지 않았으면 의뢰자 정보 제외
+      const viewed = await db.hasViewedQuote(input.id, ctx.partner.id);
+      if (!viewed) {
+        // 지정 견적은 본인 지정이면 열람 전이라도 접근 가능하나, 의뢰자 정보는 열람 후에만
+        const q = await db.getQuoteById(input.id);
+        return q ? { ...q, customer: null } : null;
+      }
+      return db.getQuoteWithCustomer(input.id);
+    }),
     publicList: publicProcedure.query(async ({ ctx }) => {
       // 파트너로 로그인한 경우: 지역+카테고리 매칭된 견적만
       if (ctx.user) {

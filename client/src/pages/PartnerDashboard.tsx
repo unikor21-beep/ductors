@@ -129,20 +129,18 @@ export default function PartnerDashboard() {
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                 <span>{q.region || "미지정"}</span>
                 <span>{new Date(q.createdAt).toLocaleDateString("ko-KR")}</span>
-                <Badge variant="secondary">{viewed ? "열람 완료" : (QUOTE_STATUS_LABELS[q.status] || q.status)}</Badge>
+                {!viewed && <Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge>}
               </div>
               {viewed && q.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{q.description}</p>}
               {!viewed && isDesignated && <p className="text-xs text-primary mt-2">고객이 회원님을 지정하여 요청한 견적입니다.</p>}
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 items-center">
               {!viewed ? (
                 <Button size="sm" variant="outline" onClick={() => viewQuote.mutate({ quoteId: q.id })} disabled={viewQuote.isPending}>
                   <Eye className="w-4 h-4 mr-1" /> 열람
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => setDetailQuoteId(q.id)}>
-                  상세 보기
-                </Button>
+                <span className="text-sm font-medium text-primary px-2">열람 가능</span>
               )}
             </div>
           </div>
