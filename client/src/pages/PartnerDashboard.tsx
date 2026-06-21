@@ -126,8 +126,8 @@ export default function PartnerDashboard() {
                   <span>열람권: <strong className="text-foreground">{partner.viewCredits || 0}개</strong></span>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/shop")}>
-                <CreditCard className="w-4 h-4 mr-2" /> 열람권 구매
+              <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/wallet")}>
+                <CreditCard className="w-4 h-4 mr-2" /> 토큰 충전
               </Button>
             </CardContent>
           </Card>
@@ -235,7 +235,6 @@ export default function PartnerDashboard() {
               <TabsTrigger value="projects">현장 관리</TabsTrigger>
               <TabsTrigger value="portfolios">포트폴리오</TabsTrigger>
               <TabsTrigger value="wallet">지갑</TabsTrigger>
-              <TabsTrigger value="shop">상품 구매</TabsTrigger>
             </TabsList>
 
             {/* Leads */}
@@ -354,28 +353,6 @@ export default function PartnerDashboard() {
             {/* Shop */}
             <TabsContent value="wallet" className="mt-4">
               <WalletPanel />
-            </TabsContent>
-
-            <TabsContent value="shop" className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(products || []).map((p) => (
-                  <Card key={p.id} className="border-border/50 shadow-sm">
-                    <CardContent className="p-5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Package className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-foreground">{p.name}</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">{p.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-foreground">{Number(p.price).toLocaleString()}원</span>
-                        <Button size="sm" onClick={() => purchaseProduct.mutate({ productId: p.id })} disabled={purchaseProduct.isPending}>
-                          구매
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
             </TabsContent>
           </Tabs>
         </div>

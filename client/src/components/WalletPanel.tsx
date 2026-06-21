@@ -75,6 +75,32 @@ export default function WalletPanel() {
         </div>
       </div>
 
+      {/* 토큰 충전 안내 */}
+      <Card className="border-primary/20 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Coins className="w-4 h-4 text-amber-500" /> 토큰 충전
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[10000, 30000, 50000, 100000, 300000].map((amt) => (
+              <div key={amt} className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground bg-muted/30">
+                {(amt / 10000)}만원
+              </div>
+            ))}
+          </div>
+          <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg">
+            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-700 leading-relaxed">
+              현재 토큰 충전은 <strong>관리자를 통한 수동 충전</strong>으로 진행됩니다.
+              충전을 원하시면 고객센터(support@ductors.co.kr)로 문의해주세요.
+              <br />추후 실시간 결제(카드/계좌이체)가 추가될 예정입니다.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 거래 내역 */}
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
