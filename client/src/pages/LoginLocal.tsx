@@ -17,6 +17,7 @@ export default function LoginLocal() {
   const login = trpc.auth.login.useMutation({
     onSuccess: () => {
       toast.success("로그인되었습니다");
+      sessionStorage.setItem("justLoggedIn", "1");
       window.location.href = "/";
     },
     onError: (e) => toast.error(e.message),

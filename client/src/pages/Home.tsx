@@ -2,14 +2,33 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { FileText, Search, Wind, ArrowRight, Calculator, Users, Shield, Star, Zap } from "lucide-react";
 import { HERO_BG_DEFAULT, SECTION3_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
 import { trpc } from "@/lib/trpc";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const [, navigate] = useLocation();
+
+  // 파트너가 로그인 직후 홈에 도착하면 대시보드로 1회 이동
+  useEffect(() => {
+    if (loading) return;
+    const justLoggedIn = sessionStorage.getItem("justLoggedIn") === "1"
+      || new URLSearchParams(window.location.search).get("justLoggedIn") === "1";
+    if (justLoggedIn) {
+      sessionStorage.removeItem("justLoggedIn");
+      // URL 파라미터 정리
+      if (window.location.search.includes("justLoggedIn")) {
+        window.history.replaceState({}, "", "/");
+      }
+      if (user?.role === "partner") {
+        navigate("/dashboard");
+      }
+    }
+  }, [loading, user, navigate]);
+
   // Fetch admin-managed background images from DB settings
   const { data: heroBgSetting } = trpc.settings.get.useQuery(
     { key: SETTING_KEYS.HERO_BG },
