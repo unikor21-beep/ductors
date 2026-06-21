@@ -26,6 +26,10 @@ function PartnerMyPage() {
   const utils = trpc.useUtils();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // 전문분야 = 대분류 카테고리
+  const { data: allCategories } = trpc.categories.list.useQuery();
+  const parentCategories = (allCategories || []).filter((c: any) => !c.parentId);
+
   const [form, setForm] = useState({
     companyName: "",
     phone: "",
@@ -34,6 +38,7 @@ function PartnerMyPage() {
     description: "",
     logoUrl: "",
     regions: [] as string[],
+    specialties: [] as string[],
   });
   const [zonecode, setZonecode] = useState("");
   const [baseAddress, setBaseAddress] = useState("");
@@ -50,6 +55,7 @@ function PartnerMyPage() {
         description: partner.description || "",
         logoUrl: partner.logoUrl || "",
         regions: (partner.regions as string[]) || [],
+        specialties: (partner.specialties as string[]) || [],
       });
       // 주소 파싱
       const addr = partner.address || "";
@@ -77,6 +83,13 @@ function PartnerMyPage() {
     setForm((f) => ({
       ...f,
       regions: f.regions.includes(r) ? f.regions.filter((x) => x !== r) : [...f.regions, r],
+    }));
+  };
+
+  const toggleSpecialty = (s: string) => {
+    setForm((f) => ({
+      ...f,
+      specialties: f.specialties.includes(s) ? f.specialties.filter((x) => x !== s) : [...f.specialties, s],
     }));
   };
 
@@ -194,6 +207,26 @@ function PartnerMyPage() {
                   ))}
                 </div>
               </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 전문 분야 */}
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">전문 분야</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">선택한 분야의 견적이 견적 리드에 표시됩니다.</p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {parentCategories.length === 0 ? (
+              <p className="text-sm text-muted-foreground">카테고리를 불러오는 중...</p>
+            ) : parentCategories.map((c: any) => (
+              <label key={c.id} className="flex items-center gap-1.5 text-sm border border-border rounded-lg px-3 py-2 cursor-pointer hover:bg-muted/30">
+                <Checkbox checked={form.specialties.includes(String(c.id))} onCheckedChange={() => toggleSpecialty(String(c.id))} />
+                {c.name}
+              </label>
             ))}
           </div>
         </CardContent>
