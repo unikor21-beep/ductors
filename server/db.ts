@@ -214,6 +214,59 @@ export async function getPublicQuotes() {
   return db.select().from(quotes).where(eq(quotes.type, "public")).orderBy(desc(quotes.createdAt));
 }
 
+// 파트너 맞춤 공개 견적 (지역 + 카테고리 매칭)
+// - 지역: 견적 region의 시/도가 파트너 활동지역과 겹치면 매칭 (구 단위 우선, 없으면 시/도)
+// - 카테고리: 견적의 대분류가 파트너 전문분야(specialties=대분류ID)에 포함되면 매칭
+export async function getMatchedPublicQuotes(partnerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const [partner] = await db.select().from(partners).where(eq(partners.id, partnerId));
+  if (!partner) return [];
+
+  const partnerRegions = (partner.regions as string[]) || [];
+  const partnerSpecialties = (partner.specialties as string[]) || []; // 대분류 카테고리 ID(문자열)
+
+  // 전체 공개 견적
+  const allPublic = await db.select().from(quotes)
+    .where(eq(quotes.type, "public"))
+    .orderBy(desc(quotes.createdAt));
+
+  // 카테고리 부모 매핑 (소분류 → 대분류)
+  const allCats = await db.select().from(categories);
+  const parentOf = (catId: number | null): number | null => {
+    if (!catId) return null;
+    const cat = allCats.find((c) => c.id === catId);
+    if (!cat) return null;
+    return cat.parentId ?? cat.id; // 부모 있으면 부모, 없으면 자기 자신(이미 대분류)
+  };
+
+  // 파트너가 활동지역/전문분야를 아예 설정 안 했으면 전체 노출 (초기 상태 배려)
+  const hasRegionFilter = partnerRegions.length > 0;
+  const hasCategoryFilter = partnerSpecialties.length > 0;
+
+  return allPublic.filter((q) => {
+    // 1) 지역 매칭
+    if (hasRegionFilter && q.region) {
+      const quoteSido = q.region.split(" ")[0]; // "서울 광진구" → "서울"
+      const regionMatch = partnerRegions.some((pr) => {
+        // 구 단위 정확 매칭 OR 시/도 단위 매칭
+        return pr === q.region || pr.split(" ")[0] === quoteSido;
+      });
+      if (!regionMatch) return false;
+    }
+
+    // 2) 카테고리 매칭 (견적 대분류가 파트너 전문분야에 포함)
+    if (hasCategoryFilter && q.categoryId) {
+      const quoteParent = parentOf(q.categoryId);
+      const catMatch = partnerSpecialties.some((s) => String(s) === String(quoteParent) || String(s) === String(q.categoryId));
+      if (!catMatch) return false;
+    }
+
+    return true;
+  });
+}
+
 export async function getDesignatedQuotes(partnerId: number) {
   const db = await getDb();
   if (!db) return [];

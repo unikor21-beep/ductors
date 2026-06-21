@@ -89,7 +89,15 @@ export const appRouter = router({
     }),
     myQuotes: protectedProcedure.query(async ({ ctx }) => db.getQuotesByCustomer(ctx.user.id)),
     getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => db.getQuoteById(input.id)),
-    publicList: publicProcedure.query(async () => db.getPublicQuotes()),
+    publicList: publicProcedure.query(async ({ ctx }) => {
+      // 파트너로 로그인한 경우: 지역+카테고리 매칭된 견적만
+      if (ctx.user) {
+        const partner = await db.getPartnerByUserId(ctx.user.id);
+        if (partner) return db.getMatchedPublicQuotes(partner.id);
+      }
+      // 비로그인/일반 사용자: 전체 공개 견적
+      return db.getPublicQuotes();
+    }),
     designatedList: partnerProcedure.query(async ({ ctx }) => {
       if (!ctx.partner) return [];
       return db.getDesignatedQuotes(ctx.partner.id);

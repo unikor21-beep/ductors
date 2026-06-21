@@ -15,8 +15,6 @@ import { useLocation, Link } from "wouter";
 import { Building2, CheckCircle2, ImagePlus, X, FileText, AlertCircle } from "lucide-react";
 import { REGIONS, REGION_GROUPS } from "@shared/constants";
 
-const SPECIALTIES = ["환기 시스템", "닥트 시공", "공조 설비", "주방 후드", "클린룸", "산업 환기"];
-
 export default function PartnerRegister() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -46,6 +44,10 @@ export default function PartnerRegister() {
   const [zonecode, setZonecode] = useState("");
   const [baseAddress, setBaseAddress] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
+
+  // 전문분야 = 대분류 카테고리 (parentId 없는 것)
+  const { data: allCategories } = trpc.categories.list.useQuery();
+  const parentCategories = (allCategories || []).filter((c: any) => !c.parentId);
 
   const verifyBiz = trpc.partners.verifyBusinessNumber.useMutation({
     onSuccess: (res) => {
@@ -348,12 +350,16 @@ export default function PartnerRegister() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-3 block">전문 분야</Label>
+                <Label className="text-sm font-medium mb-3 block">
+                  전문 분야 <span className="text-xs text-muted-foreground font-normal">(선택한 분야의 견적을 받아봅니다)</span>
+                </Label>
                 <div className="flex flex-wrap gap-2">
-                  {SPECIALTIES.map((s) => (
-                    <label key={s} className="flex items-center gap-1.5 text-sm">
-                      <Checkbox checked={form.specialties.includes(s)} onCheckedChange={() => toggleSpecialty(s)} />
-                      {s}
+                  {parentCategories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">카테고리를 불러오는 중...</p>
+                  ) : parentCategories.map((c: any) => (
+                    <label key={c.id} className="flex items-center gap-1.5 text-sm border border-border rounded-lg px-3 py-2 cursor-pointer hover:bg-muted/30">
+                      <Checkbox checked={form.specialties.includes(String(c.id))} onCheckedChange={() => toggleSpecialty(String(c.id))} />
+                      {c.name}
                     </label>
                   ))}
                 </div>
