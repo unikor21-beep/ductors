@@ -42,6 +42,8 @@ export const partners = mysqlTable("partners", {
   grade: mysqlEnum("grade", ["bronze", "silver", "gold", "platinum"]).default("bronze"),
   responseRate: int("responseRate").default(0),
   viewCredits: int("viewCredits").default(0),
+  tokenBalance: int("tokenBalance").default(0).notNull(),
+  pointBalance: int("pointBalance").default(0).notNull(),
   subscriptionType: mysqlEnum("subscriptionType", ["none", "monthly_view", "monthly_design"]).default("none"),
   subscriptionExpiry: timestamp("subscriptionExpiry"),
   designCredits: int("designCredits").default(0),
@@ -297,3 +299,58 @@ export const userCoupons = mysqlTable("userCoupons", {
 
 export type UserCoupon = typeof userCoupons.$inferSelect;
 export type InsertUserCoupon = typeof userCoupons.$inferInsert;
+
+// ============================================================
+// 14. WALLET (지갑 - 토큰/포인트 거래내역)
+// ============================================================
+// 잔액(tokenBalance/pointBalance)은 partners 테이블에 추가됨
+// 이 테이블은 모든 충전/차감/지급/만료 내역을 기록
+export const walletTransactions = mysqlTable("walletTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  partnerId: int("partnerId").notNull(),
+  // token=유료충전 사이버머니, point=프로모션 지급 사이버머니
+  currency: mysqlEnum("currency", ["token", "point"]).notNull(),
+  // charge=충전/지급(+), deduct=열람차감(-), expire=포인트만료(-), refund=환불
+  type: mysqlEnum("type", ["charge", "deduct", "expire", "refund"]).notNull(),
+  amount: int("amount").notNull(),          // 변동 금액 (양수)
+  balanceAfter: int("balanceAfter").notNull(), // 거래 후 잔액
+  description: varchar("description", { length: 300 }), // "지정 견적 열람", "프로모션 지급" 등
+  relatedQuoteId: int("relatedQuoteId"),    // 열람 차감 시 관련 견적
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
+export type InsertWalletTransaction = typeof walletTransactions.$inferInsert;
+
+// ============================================================
+// 14-1. POINT BATCHES (포인트 배치 - 유효기간 관리)
+// ============================================================
+// 포인트는 지급 건마다 유효기간이 다름 → 배치 단위로 관리
+// 차감 시 먼저 만료되는 배치부터 차감 (FIFO)
+export const pointBatches = mysqlTable("pointBatches", {
+  id: int("id").autoincrement().primaryKey(),
+  partnerId: int("partnerId").notNull(),
+  amount: int("amount").notNull(),          // 지급된 포인트 양
+  remaining: int("remaining").notNull(),    // 남은 포인트 양
+  reason: varchar("reason", { length: 300 }), // 지급 사유 (프로모션명 등)
+  expiresAt: timestamp("expiresAt").notNull(), // 만료 일시
+  isExpired: boolean("isExpired").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PointBatch = typeof pointBatches.$inferSelect;
+export type InsertPointBatch = typeof pointBatches.$inferInsert;
+
+// ============================================================
+// 14-2. WALLET SETTINGS (지갑 가격 설정 - 관리자)
+// ============================================================
+// 관리자가 설정하는 열람 가격, 구독료 등 (key-value)
+// designatedViewPrice=지정열람가, publicViewPrice=공개열람가, monthlySubscription=월구독료
+export const walletSettings = mysqlTable("walletSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  settingKey: varchar("settingKey", { length: 100 }).notNull().unique(),
+  settingValue: int("settingValue").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WalletSetting = typeof walletSettings.$inferSelect;

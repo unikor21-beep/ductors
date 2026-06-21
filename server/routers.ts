@@ -313,6 +313,16 @@ export const appRouter = router({
         nextRequiredRating: nextRule?.minRating || null,
       };
     }),
+
+    // ===== 지갑 (파트너 본인) =====
+    wallet: partnerProcedure.query(async ({ ctx }) => {
+      if (!ctx.partner) return null;
+      return db.getWallet(ctx.partner.id);
+    }),
+    walletTransactions: partnerProcedure.query(async ({ ctx }) => {
+      if (!ctx.partner) return [];
+      return db.getWalletTransactions(ctx.partner.id);
+    }),
   }),
 
   // ===================== REVIEWS =====================
@@ -418,6 +428,39 @@ export const appRouter = router({
       return { success: true };
     }),
     orders: adminProcedure.query(async () => db.getAllOrders()),
+
+    // ===== 지갑 관리 (관리자) =====
+    // 가격 설정 조회
+    walletSettings: adminProcedure.query(async () => db.getWalletSettings()),
+    // 가격 설정 변경
+    updateWalletSetting: adminProcedure
+      .input(z.object({ key: z.enum(["designatedViewPrice", "publicViewPrice", "monthlySubscription"]), value: z.number().min(0) }))
+      .mutation(async ({ input }) => {
+        await db.setWalletSetting(input.key, input.value);
+        return { success: true };
+      }),
+    // 파트너 토큰 수동 충전
+    chargeToken: adminProcedure
+      .input(z.object({ partnerId: z.number(), amount: z.number().min(1), description: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const newBalance = await db.chargeToken(input.partnerId, input.amount, input.description || "관리자 수동 충전");
+        return { success: true, newBalance };
+      }),
+    // 파트너 포인트 지급 (프로모션)
+    grantPoint: adminProcedure
+      .input(z.object({ partnerId: z.number(), amount: z.number().min(1), validDays: z.number().min(1), reason: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const newBalance = await db.grantPoint(input.partnerId, input.amount, input.validDays, input.reason || "프로모션 지급");
+        return { success: true, newBalance };
+      }),
+    // 특정 파트너 지갑 조회
+    partnerWallet: adminProcedure
+      .input(z.object({ partnerId: z.number() }))
+      .query(async ({ input }) => {
+        const wallet = await db.getWallet(input.partnerId);
+        const transactions = await db.getWalletTransactions(input.partnerId, 20);
+        return { wallet, transactions };
+      }),
   }),
 
   // ===================== GEOCODE (public) =====================

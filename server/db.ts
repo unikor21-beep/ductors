@@ -4,7 +4,8 @@ import {
   InsertUser, users, partners, categories, categoryFields,
   quotes, quoteViews, quoteSubmissions, reviews, portfolios,
   products, orders, siteSettings, projectManagement,
-  userConsents, coupons, userCoupons
+  userConsents, coupons, userCoupons,
+  walletTransactions, pointBatches, walletSettings
 } from "../drizzle/schema";
 import type {
   Partner, InsertPartner, Category, CategoryField,
@@ -628,4 +629,194 @@ export async function issueMarketingCouponToAgreedUsers(couponId: number, expire
   await db.update(coupons).set({ usedCount: sql`${coupons.usedCount} + ${count}` }).where(eq(coupons.id, couponId));
   
   return count;
+}
+
+// ============================================================
+// WALLET (지갑) 함수
+// ============================================================
+
+// 지갑 잔액 조회
+export async function getWallet(partnerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [p] = await db.select().from(partners).where(eq(partners.id, partnerId));
+  if (!p) return null;
+  return {
+    tokenBalance: p.tokenBalance ?? 0,
+    pointBalance: p.pointBalance ?? 0,
+    total: (p.tokenBalance ?? 0) + (p.pointBalance ?? 0),
+  };
+}
+
+// 거래내역 조회
+export async function getWalletTransactions(partnerId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(walletTransactions)
+    .where(eq(walletTransactions.partnerId, partnerId))
+    .orderBy(desc(walletTransactions.createdAt))
+    .limit(limit);
+}
+
+// 토큰 충전 (관리자 수동충전 또는 결제 성공 시)
+export async function chargeToken(partnerId: number, amount: number, description: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [p] = await db.select().from(partners).where(eq(partners.id, partnerId));
+  if (!p) return null;
+  const newBalance = (p.tokenBalance ?? 0) + amount;
+  await db.update(partners).set({ tokenBalance: newBalance }).where(eq(partners.id, partnerId));
+  await db.insert(walletTransactions).values({
+    partnerId, currency: "token", type: "charge", amount,
+    balanceAfter: newBalance, description,
+  });
+  return newBalance;
+}
+
+// 포인트 지급 (관리자 프로모션) - 유효기간 배치 생성
+export async function grantPoint(partnerId: number, amount: number, validDays: number, reason: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [p] = await db.select().from(partners).where(eq(partners.id, partnerId));
+  if (!p) return null;
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + validDays);
+
+  // 포인트 배치 생성
+  await db.insert(pointBatches).values({
+    partnerId, amount, remaining: amount, reason, expiresAt,
+  });
+
+  const newBalance = (p.pointBalance ?? 0) + amount;
+  await db.update(partners).set({ pointBalance: newBalance }).where(eq(partners.id, partnerId));
+  await db.insert(walletTransactions).values({
+    partnerId, currency: "point", type: "charge", amount,
+    balanceAfter: newBalance, description: `${reason} (유효 ${validDays}일)`,
+  });
+  return newBalance;
+}
+
+// 열람 차감 (포인트 먼저 → 토큰)
+// 반환: { ok: true } 또는 { ok: false, reason: "insufficient" }
+export async function deductForView(partnerId: number, cost: number, quoteId: number, viewType: string) {
+  const db = await getDb();
+  if (!db) return { ok: false, reason: "db_error" };
+  const [p] = await db.select().from(partners).where(eq(partners.id, partnerId));
+  if (!p) return { ok: false, reason: "not_found" };
+
+  const pointBal = p.pointBalance ?? 0;
+  const tokenBal = p.tokenBalance ?? 0;
+
+  // 잔액 부족
+  if (pointBal + tokenBal < cost) {
+    return { ok: false, reason: "insufficient", needed: cost, have: pointBal + tokenBal };
+  }
+
+  let remaining = cost;
+  const desc = viewType === "designated" ? "지정 견적 열람" : "공개 견적 열람";
+
+  // 1단계: 포인트 차감 (만료 임박 배치부터 FIFO)
+  if (pointBal > 0 && remaining > 0) {
+    const usePoint = Math.min(pointBal, remaining);
+    // 포인트 배치에서 차감 (만료일 빠른 순)
+    const batches = await db.select().from(pointBatches)
+      .where(and(
+        eq(pointBatches.partnerId, partnerId),
+        eq(pointBatches.isExpired, false),
+        sql`${pointBatches.remaining} > 0`
+      ))
+      .orderBy(asc(pointBatches.expiresAt));
+
+    let toDeduct = usePoint;
+    for (const batch of batches) {
+      if (toDeduct <= 0) break;
+      const deduct = Math.min(batch.remaining, toDeduct);
+      await db.update(pointBatches)
+        .set({ remaining: batch.remaining - deduct })
+        .where(eq(pointBatches.id, batch.id));
+      toDeduct -= deduct;
+    }
+
+    const newPointBal = pointBal - usePoint;
+    await db.update(partners).set({ pointBalance: newPointBal }).where(eq(partners.id, partnerId));
+    await db.insert(walletTransactions).values({
+      partnerId, currency: "point", type: "deduct", amount: usePoint,
+      balanceAfter: newPointBal, description: desc, relatedQuoteId: quoteId,
+    });
+    remaining -= usePoint;
+  }
+
+  // 2단계: 토큰 차감 (포인트로 부족한 만큼)
+  if (remaining > 0) {
+    const newTokenBal = tokenBal - remaining;
+    await db.update(partners).set({ tokenBalance: newTokenBal }).where(eq(partners.id, partnerId));
+    await db.insert(walletTransactions).values({
+      partnerId, currency: "token", type: "deduct", amount: remaining,
+      balanceAfter: newTokenBal, description: desc, relatedQuoteId: quoteId,
+    });
+  }
+
+  return { ok: true };
+}
+
+// 만료된 포인트 처리 (배치 작업 - 매일 실행)
+export async function expirePoints() {
+  const db = await getDb();
+  if (!db) return 0;
+  const now = new Date();
+  const expiredBatches = await db.select().from(pointBatches)
+    .where(and(
+      eq(pointBatches.isExpired, false),
+      sql`${pointBatches.expiresAt} < ${now}`,
+      sql`${pointBatches.remaining} > 0`
+    ));
+
+  let totalExpired = 0;
+  for (const batch of expiredBatches) {
+    // 배치를 만료 처리
+    await db.update(pointBatches)
+      .set({ isExpired: true, remaining: 0 })
+      .where(eq(pointBatches.id, batch.id));
+
+    // 파트너 포인트 잔액 차감
+    const [p] = await db.select().from(partners).where(eq(partners.id, batch.partnerId));
+    if (p) {
+      const newBal = Math.max(0, (p.pointBalance ?? 0) - batch.remaining);
+      await db.update(partners).set({ pointBalance: newBal }).where(eq(partners.id, batch.partnerId));
+      await db.insert(walletTransactions).values({
+        partnerId: batch.partnerId, currency: "point", type: "expire", amount: batch.remaining,
+        balanceAfter: newBal, description: "포인트 유효기간 만료",
+      });
+      totalExpired += batch.remaining;
+    }
+  }
+  return totalExpired;
+}
+
+// 지갑 설정값 조회
+export async function getWalletSettings() {
+  const db = await getDb();
+  if (!db) return {};
+  const rows = await db.select().from(walletSettings);
+  const result: Record<string, number> = {};
+  rows.forEach((r) => { result[r.settingKey] = r.settingValue; });
+  // 기본값
+  return {
+    designatedViewPrice: result.designatedViewPrice ?? 50000,
+    publicViewPrice: result.publicViewPrice ?? 10000,
+    monthlySubscription: result.monthlySubscription ?? 50000,
+  };
+}
+
+// 지갑 설정값 변경 (관리자)
+export async function setWalletSetting(key: string, value: number) {
+  const db = await getDb();
+  if (!db) return;
+  const [existing] = await db.select().from(walletSettings).where(eq(walletSettings.settingKey, key));
+  if (existing) {
+    await db.update(walletSettings).set({ settingValue: value }).where(eq(walletSettings.settingKey, key));
+  } else {
+    await db.insert(walletSettings).values({ settingKey: key, settingValue: value });
+  }
 }
