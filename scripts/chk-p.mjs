@@ -1,0 +1,14 @@
+import mysql from 'mysql2/promise';
+import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, '../.env') });
+const conn = await mysql.createConnection(process.env.DATABASE_URL + '?charset=utf8mb4');
+const [partners] = await conn.execute("SELECT id, userId, companyName, status FROM partners");
+console.log('=== 파트너 ===');
+partners.forEach(p => console.log(`  partnerId=${p.id}, userId=${p.userId}, ${p.companyName}, status=${p.status}`));
+const [users] = await conn.execute("SELECT id, openId, name, role FROM users WHERE id IN (1, 56, 697)");
+console.log('\n=== 주요 계정 ===');
+users.forEach(u => console.log(`  userId=${u.id}, role=${u.role}, openId=${u.openId}, name=${u.name}`));
+await conn.end();
