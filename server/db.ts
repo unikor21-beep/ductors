@@ -265,6 +265,27 @@ export async function getQuotesByCustomer(customerId: number) {
   return db.select().from(quotes).where(eq(quotes.customerId, customerId)).orderBy(desc(quotes.createdAt));
 }
 
+// 고객의 진행중 견적 개수 (매칭됨/진행중 = 정산 안 끝난 거래)
+export async function countActiveQuotesByCustomer(customerId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select().from(quotes)
+    .where(and(
+      eq(quotes.customerId, customerId),
+      inArray(quotes.status, ["matched", "in_progress"])
+    ));
+  return rows.length;
+}
+
+// 회원 탈퇴 처리 (Soft Delete - 데이터 보관, 로그인 차단)
+export async function deactivateUser(userId: number, reason?: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({ deletedAt: new Date(), deactivatedReason: reason ?? null })
+    .where(eq(users.id, userId));
+}
+
 export async function getPublicQuotes() {
   const db = await getDb();
   if (!db) return [];

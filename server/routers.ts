@@ -112,6 +112,10 @@ export const appRouter = router({
         if (!valid) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "아이디 또는 비밀번호가 일치하지 않습니다" });
         }
+        // 탈퇴한 회원 차단
+        if (user.deletedAt) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "탈퇴한 계정입니다. 재가입은 고객센터로 문의해주세요." });
+        }
         // 세션 발급
         const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -151,6 +155,45 @@ export const appRouter = router({
         // 비밀번호 재설정
         const newHash = await hashPassword(input.newPassword);
         await db.updateUserPassword(user.id, newHash);
+        return { success: true };
+      }),
+
+    // 탈퇴 가능 여부 + 잔액/진행건 확인
+    getWithdrawInfo: protectedProcedure.query(async ({ ctx }) => {
+      const activeQuotes = await db.countActiveQuotesByCustomer(ctx.user.id);
+      const partner = await db.getPartnerByUserId(ctx.user.id);
+      let tokenBalance = 0;
+      let pointBalance = 0;
+      if (partner) {
+        tokenBalance = partner.tokenBalance ?? 0;
+        pointBalance = partner.pointBalance ?? 0;
+      }
+      return {
+        activeQuotes,
+        isPartner: !!partner,
+        tokenBalance,
+        pointBalance,
+        canWithdraw: activeQuotes === 0,
+      };
+    }),
+
+    // 회원 탈퇴 (Soft Delete)
+    withdraw: protectedProcedure
+      .input(z.object({ reason: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        // 진행중 견적이 있으면 탈퇴 차단
+        const activeQuotes = await db.countActiveQuotesByCustomer(ctx.user.id);
+        if (activeQuotes > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `진행 중인 견적이 ${activeQuotes}건 있습니다. 완료 후 탈퇴할 수 있습니다.`,
+          });
+        }
+        // 탈퇴 처리 (비활성화)
+        await db.deactivateUser(ctx.user.id, input.reason);
+        // 세션 쿠키 제거
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
         return { success: true };
       }),
   }),

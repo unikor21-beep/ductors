@@ -289,6 +289,11 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
+    // 탈퇴(비활성화)된 회원 차단
+    if (user.deletedAt) {
+      throw ForbiddenError("Account deactivated");
+    }
+
     await db.upsertUser({
       openId: user.openId,
       lastSignedIn: signedInAt,
