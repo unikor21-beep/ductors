@@ -15,7 +15,7 @@ export default function Marketing() {
             <section>
               <h2 className="text-lg font-semibold mb-3">1. 수집 항목</h2>
               <p className="text-muted-foreground leading-relaxed">
-                (주)멀티테크니션스(이하 "회사")는 마케팅 정보 제공을 위해 아래 항목을 수집합니다.
+                <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">(주)멀티테크니션스</span>(이하 "회사")는 마케팅 정보 제공을 위해 아래 항목을 수집합니다.
               </p>
               <ul className="mt-3 space-y-1 text-muted-foreground list-disc list-inside">
                 <li>이름(닉네임)</li>
@@ -71,14 +71,14 @@ export default function Marketing() {
               <ul className="mt-3 space-y-1 text-muted-foreground list-disc list-inside">
                 <li>마이페이지 → 알림 설정에서 직접 변경</li>
                 <li>수신된 이메일 하단의 "수신거부" 링크 클릭</li>
-                <li>고객센터 이메일: support@ductors.co.kr</li>
+                <li>고객센터 이메일: <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">support@ductors.co.kr</span></li>
               </ul>
             </section>
 
             <div className="mt-10 p-4 bg-muted/50 rounded-xl text-xs text-muted-foreground">
               본 동의서는 「개인정보 보호법」 제22조 및 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」
               제50조에 따라 작성되었습니다.<br />
-              문의: (주)멀티테크니션스 / support@ductors.co.kr
+              문의: <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">(주)멀티테크니션스</span> / <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">support@ductors.co.kr</span>
             </div>
           </div>
         </div>

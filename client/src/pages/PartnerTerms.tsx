@@ -15,7 +15,7 @@ export default function PartnerTerms() {
             <section>
               <h2 className="text-lg font-semibold mb-3">제1조 (목적)</h2>
               <p className="text-muted-foreground leading-relaxed">
-                본 약관은 (주)멀티테크니션스(이하 "회사")가 운영하는 덕터스(Ductors) 플랫폼에서
+                본 약관은 <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">(주)멀티테크니션스</span>(이하 "회사")가 운영하는 덕터스(Ductors) 플랫폼에서
                 파트너(시공업체)로 활동하는 사업자(이하 "파트너")와 회사 간의 권리·의무 및
                 서비스 이용에 관한 사항을 규정함을 목적으로 합니다.
               </p>
@@ -149,8 +149,8 @@ export default function PartnerTerms() {
             <div className="mt-10 p-4 bg-muted/50 rounded-xl text-xs text-muted-foreground">
               본 약관은 「전자상거래 등에서의 소비자보호에 관한 법률」, 「개인정보 보호법」,
               「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령을 준수합니다.<br /><br />
-              (주)멀티테크니션스 | 사업자등록번호: 000-00-00000 | 대표: 김재유<br />
-              주소: 경기도 화성시 | 고객센터: support@ductors.co.kr
+              <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">(주)멀티테크니션스</span> | 사업자등록번호: <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">000-00-00000</span> | 대표: <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">김재유</span><br />
+              주소: <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">경기도 화성시</span> | 고객센터: <span style={{color:"#ef4444", fontWeight:"600"}} title="오픈 전 수정 필요">support@ductors.co.kr</span>
             </div>
           </div>
         </div>
