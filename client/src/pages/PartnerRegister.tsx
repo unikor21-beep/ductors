@@ -22,6 +22,7 @@ export default function PartnerRegister() {
   const [agreePartnerTerms, setAgreePartnerTerms] = useState(false);
   const [bizVerified, setBizVerified] = useState(false);
   const [bizVerifyMsg, setBizVerifyMsg] = useState("");
+  const [addressMatchesBiz, setAddressMatchesBiz] = useState(false);
 
   const [form, setForm] = useState({
     companyName: "",
@@ -326,8 +327,17 @@ export default function PartnerRegister() {
                 onDetailAddressChange={setDetailAddress}
                 label="업체 주소"
                 detailPlaceholder="상세 주소 (동/호수/층 등)"
-                helperText="입력하신 주소는 파트너 찾기 지도에 표시됩니다"
+                helperText="사업자등록증 상의 사업장 주소를 입력해주세요. 파트너 찾기 지도에 표시됩니다."
               />
+              {baseAddress && (
+                <label className="flex items-start gap-2 text-sm cursor-pointer -mt-1">
+                  <Checkbox checked={addressMatchesBiz} onCheckedChange={(v) => setAddressMatchesBiz(v === true)} className="mt-0.5" />
+                  <span className="text-muted-foreground">
+                    위 주소가 <strong className="text-foreground">사업자등록증 상의 주소와 동일</strong>함을 확인합니다.
+                    <span className="block text-xs mt-0.5">실제 사업장이 다른 경우 그대로 두셔도 되지만, 관리자 승인이 지연될 수 있습니다.</span>
+                  </span>
+                </label>
+              )}
 
               <div>
                 <Label className="text-sm font-medium mb-2 block">한줄 소개</Label>
