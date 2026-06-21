@@ -329,7 +329,7 @@ export default function PartnerRegister() {
                     <label htmlFor="partner-terms" className="text-sm text-foreground cursor-pointer">
                       <span className="text-red-500 font-medium">[필수]</span> 파트너 서비스 이용약관 동의
                     </label>
-                    <Link href="/terms" className="text-xs text-primary hover:underline ml-2">
+                    <Link href="/partner-terms" className="text-xs text-primary hover:underline ml-2">
                       보기
                     </Link>
                     <p className="text-xs text-muted-foreground mt-1">
