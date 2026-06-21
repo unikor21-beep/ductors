@@ -15,7 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Coins, Gift, Settings, Save, Loader2, Users, Megaphone, Trash2, Calendar } from "lucide-react";
+import { Coins, Gift, Settings, Save, Loader2, Users, Megaphone, Trash2, Calendar, Filter } from "lucide-react";
+import { SIDO_LIST } from "@/components/RegionSelect";
+import { GRADE_LABELS } from "@shared/constants";
 
 function formatWon(n: number) {
   return (n ?? 0).toLocaleString("ko-KR");
@@ -55,6 +57,22 @@ export default function AdminWalletManager() {
   const [bulkAmount, setBulkAmount] = useState("");
   const [bulkDays, setBulkDays] = useState("30");
   const [bulkReason, setBulkReason] = useState("");
+  // 필터
+  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filterGrade, setFilterGrade] = useState<string>("all");
+
+  // 필터링된 파트너 목록
+  const filteredPartners = approvedPartners.filter((p) => {
+    // 지역 필터: 파트너 활동지역(시/도 기준)에 선택 지역이 포함되는지
+    if (filterRegion !== "all") {
+      const regions = (p.regions as string[]) || [];
+      const matched = regions.some((r) => r === filterRegion || r.startsWith(filterRegion));
+      if (!matched) return false;
+    }
+    // 등급 필터
+    if (filterGrade !== "all" && (p.grade || "bronze") !== filterGrade) return false;
+    return true;
+  });
   const bulkGrant = trpc.admin.bulkGrantPoint.useMutation({
     onSuccess: (r) => {
       toast.success(`${r.count}개 파트너에게 포인트 지급 완료`);
@@ -68,8 +86,10 @@ export default function AdminWalletManager() {
     setCheckedPartners((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
   const toggleAll = () => {
-    if (checkedPartners.length === approvedPartners.length) setCheckedPartners([]);
-    else setCheckedPartners(approvedPartners.map((p) => p.id));
+    const ids = filteredPartners.map((p) => p.id);
+    const allChecked = ids.length > 0 && ids.every((id) => checkedPartners.includes(id));
+    if (allChecked) setCheckedPartners((prev) => prev.filter((id) => !ids.includes(id)));
+    else setCheckedPartners((prev) => [...new Set([...prev, ...ids])]);
   };
 
   // ===== 신규가입 캠페인 =====
@@ -289,18 +309,54 @@ export default function AdminWalletManager() {
             </div>
           </div>
 
+          {/* 지역/등급 필터 */}
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/30 rounded-lg">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Filter className="w-4 h-4" /> 필터
+            </div>
+            <Select value={filterRegion} onValueChange={setFilterRegion}>
+              <SelectTrigger className="w-32 h-9"><SelectValue placeholder="지역" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 지역</SelectItem>
+                {SIDO_LIST.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterGrade} onValueChange={setFilterGrade}>
+              <SelectTrigger className="w-32 h-9"><SelectValue placeholder="등급" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 등급</SelectItem>
+                <SelectItem value="bronze">{GRADE_LABELS.bronze}</SelectItem>
+                <SelectItem value="silver">{GRADE_LABELS.silver}</SelectItem>
+                <SelectItem value="gold">{GRADE_LABELS.gold}</SelectItem>
+                <SelectItem value="platinum">{GRADE_LABELS.platinum}</SelectItem>
+              </SelectContent>
+            </Select>
+            {(filterRegion !== "all" || filterGrade !== "all") && (
+              <Button size="sm" variant="ghost" className="h-9 text-xs"
+                onClick={() => { setFilterRegion("all"); setFilterGrade("all"); }}>
+                필터 해제
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">{filteredPartners.length}명 대상</span>
+          </div>
+
           {/* 파트너 체크박스 목록 */}
           <div className="border border-border/50 rounded-lg">
             <div className="flex items-center gap-2 p-3 border-b border-border/40 bg-muted/30">
-              <Checkbox checked={approvedPartners.length > 0 && checkedPartners.length === approvedPartners.length} onCheckedChange={toggleAll} />
-              <span className="text-sm font-medium">전체 선택</span>
+              <Checkbox checked={filteredPartners.length > 0 && filteredPartners.every((p) => checkedPartners.includes(p.id))} onCheckedChange={toggleAll} />
+              <span className="text-sm font-medium">전체 선택 (필터 결과)</span>
               <span className="text-xs text-muted-foreground ml-auto">{checkedPartners.length}명 선택됨</span>
             </div>
             <div className="max-h-60 overflow-y-auto">
-              {approvedPartners.map((p) => (
+              {filteredPartners.length === 0 ? (
+                <p className="text-center text-muted-foreground py-6 text-sm">조건에 맞는 파트너가 없습니다</p>
+              ) : filteredPartners.map((p) => (
                 <label key={p.id} className="flex items-center gap-3 p-3 border-b border-border/30 last:border-0 cursor-pointer hover:bg-muted/20">
                   <Checkbox checked={checkedPartners.includes(p.id)} onCheckedChange={() => toggleCheck(p.id)} />
                   <span className="text-sm font-medium flex-1">{p.companyName}</span>
+                  <Badge variant="outline" className="text-[10px]">{GRADE_LABELS[p.grade || "bronze"]}</Badge>
                   <Badge variant="outline" className="text-[10px] text-pink-500 border-pink-200">포인트 {formatWon(p.pointBalance)}</Badge>
                 </label>
               ))}
