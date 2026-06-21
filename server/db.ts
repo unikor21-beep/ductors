@@ -167,11 +167,6 @@ export async function updatePartnerStatus(id: number, status: "pending" | "appro
   await db.update(partners).set({ status }).where(eq(partners.id, id));
 }
 
-export async function updatePartnerCredits(id: number, credits: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(partners).set({ viewCredits: credits }).where(eq(partners.id, id));
-}
 
 // ===================== CATEGORIES =====================
 export async function getActiveCategories() {

@@ -457,9 +457,7 @@ export const appRouter = router({
       const product = await db.getProductById(input.productId);
       if (!product) throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다" });
       await db.createOrder({ partnerId: ctx.partner.id, productId: product.id, amount: String(product.price) });
-      if (product.type === "view_credit" && product.creditAmount) {
-        await db.updatePartnerCredits(ctx.partner.id, (ctx.partner.viewCredits || 0) + product.creditAmount);
-      } else if (product.type === "subscription" && product.durationDays) {
+      if (product.type === "subscription" && product.durationDays) {
         const expiry = new Date();
         expiry.setDate(expiry.getDate() + product.durationDays);
         await db.updatePartner(ctx.partner.id, { subscriptionType: "monthly_view", subscriptionExpiry: expiry } as any);

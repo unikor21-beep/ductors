@@ -194,7 +194,8 @@ export default function PartnerDashboard() {
                 <h1 className="text-xl font-bold text-foreground">{partner.companyName}</h1>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <Badge variant="secondary"><Award className="w-3 h-3 mr-1" />{GRADE_LABELS[partner.grade || "bronze"]}</Badge>
-                  <span>열람권: <strong className="text-foreground">{partner.viewCredits || 0}개</strong></span>
+                  <span>토큰 <strong className="text-foreground">{(partner.tokenBalance || 0).toLocaleString()}</strong></span>
+                  <span>포인트 <strong className="text-foreground">{(partner.pointBalance || 0).toLocaleString()}</strong></span>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/wallet")}>
