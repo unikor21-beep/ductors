@@ -378,6 +378,14 @@ export async function recordQuoteView(quoteId: number, partnerId: number) {
   return { alreadyViewed: false, id: result.id };
 }
 
+// 이미 열람했는지 확인 (차감 전 중복 체크용)
+export async function hasViewedQuote(quoteId: number, partnerId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const existing = await db.select().from(quoteViews).where(and(eq(quoteViews.quoteId, quoteId), eq(quoteViews.partnerId, partnerId))).limit(1);
+  return existing.length > 0;
+}
+
 export async function getQuoteViewsByPartner(partnerId: number) {
   const db = await getDb();
   if (!db) return [];

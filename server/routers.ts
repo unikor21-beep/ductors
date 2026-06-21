@@ -391,19 +391,45 @@ export const appRouter = router({
       await db.updatePartner(ctx.partner.id, updateData);
       return { success: true };
     }),
-    // View quote with credit deduction
+    // 견적 열람 (토큰/포인트 차감)
     viewQuote: partnerProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
       if (!ctx.partner) throw new TRPCError({ code: "NOT_FOUND" });
       const partner = ctx.partner;
+
+      // 이미 열람한 견적인지 먼저 확인 (재열람은 무료)
+      const already = await db.hasViewedQuote(input.quoteId, partner.id);
+      if (already) {
+        return { alreadyViewed: true };
+      }
+
+      // 월 구독자는 무제한 열람
       const hasSubscription = partner.subscriptionType === "monthly_view" && partner.subscriptionExpiry && new Date(partner.subscriptionExpiry) > new Date();
-      if (!hasSubscription && (partner.viewCredits || 0) <= 0) {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "열람권이 부족합니다. 열람권을 구매해주세요." });
+      if (hasSubscription) {
+        await db.recordQuoteView(input.quoteId, partner.id);
+        return { alreadyViewed: false };
       }
-      const result = await db.recordQuoteView(input.quoteId, partner.id);
-      if (result && !result.alreadyViewed && !hasSubscription) {
-        await db.updatePartnerCredits(partner.id, (partner.viewCredits || 0) - 1);
+
+      // 견적 종류에 따라 가격 결정 (지정/공개)
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote) throw new TRPCError({ code: "NOT_FOUND", message: "견적을 찾을 수 없습니다" });
+      const settings = await db.getWalletSettings();
+      const viewType = quote.type === "designated" ? "designated" : "public";
+      const cost = viewType === "designated" ? settings.designatedViewPrice : settings.publicViewPrice;
+
+      // 토큰/포인트 차감 (포인트 먼저 → 토큰)
+      const deduct = await db.deductForView(partner.id, cost, input.quoteId, viewType);
+      if (!deduct.ok) {
+        if (deduct.reason === "insufficient") {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: `잔액이 부족합니다. (필요: ${cost.toLocaleString()}, 보유: ${(deduct.have ?? 0).toLocaleString()}) 토큰을 충전해주세요.`,
+          });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "열람 처리 중 오류가 발생했습니다" });
       }
-      return { alreadyViewed: result?.alreadyViewed || false };
+
+      await db.recordQuoteView(input.quoteId, partner.id);
+      return { alreadyViewed: false };
     }),
     submitQuote: partnerProcedure.input(z.object({
       quoteId: z.number(),
