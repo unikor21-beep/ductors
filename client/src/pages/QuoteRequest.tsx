@@ -153,6 +153,7 @@ export default function QuoteRequest() {
       region,
       address: fullAddress,
       formData,
+      attachments,
       designatedPartnerId: quoteType === "designated" ? designatedPartnerId || undefined : undefined,
     });
   };
