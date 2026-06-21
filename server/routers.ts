@@ -283,8 +283,15 @@ export const appRouter = router({
     // Admin
     listAll: adminProcedure.query(async () => db.getAllPartners()),
     updateStatus: adminProcedure.input(z.object({ id: z.number(), status: z.enum(["pending", "approved", "rejected", "suspended"]) })).mutation(async ({ input }) => {
+      // 승인 전 현재 상태 확인 (이미 approved면 보너스 중복 방지)
+      const before = await db.getPartnerById(input.id);
       await db.updatePartnerStatus(input.id, input.status);
-      return { success: true };
+      // 새로 승인된 경우에만 신규가입 보너스 자동 적용
+      let bonus = null;
+      if (input.status === "approved" && before?.status !== "approved") {
+        bonus = await db.applySignupBonusIfEligible(input.id);
+      }
+      return { success: true, bonus };
     }),
     updateGrade: adminProcedure.input(z.object({ id: z.number(), grade: z.enum(["bronze", "silver", "gold", "platinum"]) })).mutation(async ({ input }) => {
       await db.updatePartnerGrade(input.id, input.grade);
@@ -460,6 +467,52 @@ export const appRouter = router({
         const wallet = await db.getWallet(input.partnerId);
         const transactions = await db.getWalletTransactions(input.partnerId, 20);
         return { wallet, transactions };
+      }),
+
+    // ===== 일괄 포인트 지급 =====
+    bulkGrantPoint: adminProcedure
+      .input(z.object({
+        partnerIds: z.array(z.number()).min(1),
+        amount: z.number().min(1),
+        validDays: z.number().min(1),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const count = await db.bulkGrantPoint(input.partnerIds, input.amount, input.validDays, input.reason || "일괄 지급");
+        return { success: true, count };
+      }),
+
+    // ===== 신규가입 보너스 캠페인 =====
+    signupCampaigns: adminProcedure.query(async () => db.getSignupBonusCampaigns()),
+    createSignupCampaign: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        bonusAmount: z.number().min(1),
+        validDays: z.number().min(1),
+        startsAt: z.string(),  // ISO 날짜 문자열
+        endsAt: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createSignupBonusCampaign({
+          name: input.name,
+          bonusAmount: input.bonusAmount,
+          validDays: input.validDays,
+          startsAt: new Date(input.startsAt),
+          endsAt: new Date(input.endsAt),
+        });
+        return { success: true, id };
+      }),
+    toggleSignupCampaign: adminProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await db.toggleSignupBonusCampaign(input.id, input.isActive);
+        return { success: true };
+      }),
+    deleteSignupCampaign: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSignupBonusCampaign(input.id);
+        return { success: true };
       }),
   }),
 

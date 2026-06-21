@@ -354,3 +354,22 @@ export const walletSettings = mysqlTable("walletSettings", {
 });
 
 export type WalletSetting = typeof walletSettings.$inferSelect;
+
+// ============================================================
+// 14-3. SIGNUP BONUS CAMPAIGNS (신규가입 자동 보너스 캠페인)
+// ============================================================
+// 관리자가 기간을 설정해두면, 그 기간 내 승인된 신규 파트너에게 자동으로 포인트 지급
+export const signupBonusCampaigns = mysqlTable("signupBonusCampaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),  // 캠페인명 (예: "6월 신규파트너 환영")
+  bonusAmount: int("bonusAmount").notNull(),          // 지급 포인트
+  validDays: int("validDays").notNull(),              // 포인트 유효기간 (일)
+  startsAt: timestamp("startsAt").notNull(),          // 캠페인 시작
+  endsAt: timestamp("endsAt").notNull(),              // 캠페인 종료
+  isActive: boolean("isActive").default(true).notNull(),
+  grantedCount: int("grantedCount").default(0).notNull(), // 지급된 건수
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SignupBonusCampaign = typeof signupBonusCampaigns.$inferSelect;
+export type InsertSignupBonusCampaign = typeof signupBonusCampaigns.$inferInsert;

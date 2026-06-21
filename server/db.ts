@@ -5,7 +5,7 @@ import {
   quotes, quoteViews, quoteSubmissions, reviews, portfolios,
   products, orders, siteSettings, projectManagement,
   userConsents, coupons, userCoupons,
-  walletTransactions, pointBatches, walletSettings
+  walletTransactions, pointBatches, walletSettings, signupBonusCampaigns
 } from "../drizzle/schema";
 import type {
   Partner, InsertPartner, Category, CategoryField,
@@ -819,4 +819,78 @@ export async function setWalletSetting(key: string, value: number) {
   } else {
     await db.insert(walletSettings).values({ settingKey: key, settingValue: value });
   }
+}
+
+// ============================================================
+// 신규가입 보너스 캠페인 & 일괄지급 함수
+// ============================================================
+
+// 캠페인 목록 조회
+export async function getSignupBonusCampaigns() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(signupBonusCampaigns).orderBy(desc(signupBonusCampaigns.createdAt));
+}
+
+// 캠페인 생성
+export async function createSignupBonusCampaign(data: {
+  name: string; bonusAmount: number; validDays: number; startsAt: Date; endsAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(signupBonusCampaigns).values(data).$returningId();
+  return result.id;
+}
+
+// 캠페인 활성/비활성 토글
+export async function toggleSignupBonusCampaign(id: number, isActive: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(signupBonusCampaigns).set({ isActive }).where(eq(signupBonusCampaigns.id, id));
+}
+
+// 캠페인 삭제
+export async function deleteSignupBonusCampaign(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(signupBonusCampaigns).where(eq(signupBonusCampaigns.id, id));
+}
+
+// 현재 활성 캠페인 찾기 (파트너 승인 시 자동 호출)
+// 지금 시각이 캠페인 기간 내이고 활성화된 캠페인
+export async function applySignupBonusIfEligible(partnerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const now = new Date();
+  const campaigns = await db.select().from(signupBonusCampaigns)
+    .where(and(
+      eq(signupBonusCampaigns.isActive, true),
+      sql`${signupBonusCampaigns.startsAt} <= ${now}`,
+      sql`${signupBonusCampaigns.endsAt} >= ${now}`
+    ))
+    .orderBy(desc(signupBonusCampaigns.bonusAmount)) // 여러 개면 가장 큰 혜택
+    .limit(1);
+
+  if (campaigns.length === 0) return null;
+  const campaign = campaigns[0];
+
+  // 포인트 지급
+  await grantPoint(partnerId, campaign.bonusAmount, campaign.validDays, `${campaign.name} (신규가입 보너스)`);
+
+  // 지급 카운트 증가
+  await db.update(signupBonusCampaigns)
+    .set({ grantedCount: campaign.grantedCount + 1 })
+    .where(eq(signupBonusCampaigns.id, campaign.id));
+
+  return { name: campaign.name, amount: campaign.bonusAmount };
+}
+
+// 일괄 포인트 지급 (여러 파트너에게 한 번에)
+export async function bulkGrantPoint(partnerIds: number[], amount: number, validDays: number, reason: string) {
+  let successCount = 0;
+  for (const pid of partnerIds) {
+    const result = await grantPoint(pid, amount, validDays, reason);
+    if (result !== null) successCount++;
+  }
+  return successCount;
 }
