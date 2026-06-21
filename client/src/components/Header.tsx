@@ -74,7 +74,14 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="w-4 h-4" />
-                  <span className="text-sm">{user?.role === "admin" ? "관리자" : user?.role === "partner" ? "파트너" : user?.name || "사용자"}</span>
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                    user?.role === "admin" ? "bg-purple-100 text-purple-700" :
+                    user?.role === "partner" ? "bg-primary/15 text-primary" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {user?.role === "admin" ? "관리자" : user?.role === "partner" ? "파트너" : "고객"}
+                  </span>
+                  <span className="text-sm">{user?.name || "사용자"}</span>
                   <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
@@ -87,11 +94,6 @@ export default function Header() {
                 {user?.role === "partner" && (
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard" className="no-underline w-full">대시보드</Link>
-                  </DropdownMenuItem>
-                )}
-                {user?.role === "user" && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/partner-register" className="no-underline w-full">파트너 가입 신청</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
@@ -149,6 +151,16 @@ export default function Header() {
             <div className="border-t border-border/50 mt-2 pt-2 px-4">
               {isAuthenticated ? (
                 <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 py-2">
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                      user?.role === "admin" ? "bg-purple-100 text-purple-700" :
+                      user?.role === "partner" ? "bg-primary/15 text-primary" :
+                      "bg-muted text-muted-foreground"
+                    }`}>
+                      {user?.role === "admin" ? "관리자" : user?.role === "partner" ? "파트너" : "고객"}
+                    </span>
+                    <span className="text-sm font-medium">{user?.name || "사용자"}</span>
+                  </div>
                   {user?.role === "admin" && (
                     <Link href="/admin" onClick={() => setMobileOpen(false)}>
                       <span className="block py-2 text-sm">관리자</span>
@@ -157,11 +169,6 @@ export default function Header() {
                   {user?.role === "partner" && (
                     <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
                       <span className="block py-2 text-sm">대시보드</span>
-                    </Link>
-                  )}
-                  {user?.role === "user" && (
-                    <Link href="/partner-register" onClick={() => setMobileOpen(false)}>
-                      <span className="block py-2 text-sm">파트너 가입 신청</span>
                     </Link>
                   )}
                   <Link href="/mypage" onClick={() => setMobileOpen(false)}>
