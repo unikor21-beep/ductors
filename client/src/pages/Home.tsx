@@ -30,9 +30,11 @@ export default function Home() {
       window.history.replaceState({}, "", "/");
     }
 
-    // 파트너면 대시보드로 이동
+    // 파트너면 대시보드, 관리자면 관리자 페이지로 이동
     if (user.role === "partner") {
       navigate("/dashboard");
+    } else if (user.role === "admin") {
+      navigate("/admin");
     }
   }, [loading, user, navigate]);
 

@@ -15,10 +15,16 @@ export default function LoginLocal() {
   const [password, setPassword] = useState("");
 
   const login = trpc.auth.login.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("로그인되었습니다");
-      sessionStorage.setItem("justLoggedIn", "1");
-      window.location.href = "/";
+      // 역할에 따라 이동: 파트너→대시보드, 관리자→관리자, 고객→홈
+      if (data.role === "partner") {
+        window.location.href = "/dashboard";
+      } else if (data.role === "admin") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/";
+      }
     },
     onError: (e) => toast.error(e.message),
   });

@@ -121,7 +121,7 @@ export const appRouter = router({
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-        return { success: true };
+        return { success: true, role: user.role };
       }),
 
     // 비밀번호 찾기 1단계: 아이디 입력 → 보안 질문 반환
