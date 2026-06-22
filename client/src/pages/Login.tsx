@@ -71,7 +71,7 @@ export default function Login() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <Label className="text-sm font-medium">아이디</Label>
-                  <Link href="/find-id" className="text-xs text-muted-foreground hover:underline">
+                  <Link href="/find-account/id" className="text-xs text-muted-foreground hover:underline">
                     아이디를 잊으셨나요?
                   </Link>
                 </div>
@@ -86,7 +86,7 @@ export default function Login() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <Label className="text-sm font-medium">비밀번호</Label>
-                  <Link href="/find-password" className="text-xs text-muted-foreground hover:underline">
+                  <Link href="/find-account/pw" className="text-xs text-muted-foreground hover:underline">
                     비밀번호를 잊으셨나요?
                   </Link>
                 </div>

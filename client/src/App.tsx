@@ -24,8 +24,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const PartnerTerms = lazy(() => import("./pages/PartnerTerms"));
-const FindPassword = lazy(() => import("./pages/FindPassword"));
-const FindId = lazy(() => import("./pages/FindId"));
+const FindAccount = lazy(() => import("./pages/FindAccount"));
 
 function LoadingFallback() {
   return (
@@ -57,8 +56,9 @@ function Router() {
         <Route path="/privacy" component={Privacy} />
         <Route path="/marketing" component={Marketing} />
         <Route path="/partner-terms" component={PartnerTerms} />
-        <Route path="/find-password" component={FindPassword} />
-        <Route path="/find-id" component={FindId} />
+        <Route path="/find-account/:tab?" component={FindAccount} />
+        <Route path="/find-password" component={FindAccount} />
+        <Route path="/find-id" component={FindAccount} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
