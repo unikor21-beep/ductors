@@ -948,6 +948,57 @@ export const appRouter = router({
   // ===================== ADMIN =====================
   admin: router({
     stats: adminProcedure.query(async () => db.getStats()),
+    // 데이터 관리: 기간별 집계 (1단계 — 현 데이터 기준)
+    analytics: adminProcedure.input(z.object({ from: z.string().optional(), to: z.string().optional() }).optional()).query(async ({ input }) => {
+      const fromT = input?.from ? new Date(input.from + "T00:00:00").getTime() : null;
+      const toT = input?.to ? new Date(input.to + "T23:59:59").getTime() : null;
+      const inRange = (d: any) => {
+        const t = new Date(d).getTime();
+        if (fromT !== null && t < fromT) return false;
+        if (toT !== null && t > toT) return false;
+        return true;
+      };
+      const allQuotes = (await db.getAllQuotes()).filter((q: any) => inRange(q.createdAt));
+      const allUsers = (await db.getAllUsers()).filter((u: any) => inRange(u.createdAt));
+      const partners = await db.getAllPartners(); // 등급/상태는 현재 스냅샷
+      const tx = (await db.getAllWalletTransactions()).filter((t: any) => inRange(t.createdAt));
+
+      const count = (arr: any[], key: (x: any) => string) => {
+        const m: Record<string, number> = {};
+        for (const x of arr) { const k = key(x); m[k] = (m[k] || 0) + 1; }
+        return m;
+      };
+      const sumBy = (type: string) => tx.filter((t: any) => t.type === type).reduce((s: number, t: any) => s + (t.amount || 0), 0);
+
+      const total = allQuotes.length;
+      const byStatus = count(allQuotes, (q) => q.status);
+      const completed = byStatus["completed"] || 0;
+      const cancelled = byStatus["cancelled"] || 0;
+      const matchedPlus = (byStatus["matched"] || 0) + (byStatus["in_progress"] || 0) + completed;
+
+      return {
+        quotes: {
+          total,
+          byStatus,
+          byType: { public: allQuotes.filter((q: any) => q.type === "public").length, designated: allQuotes.filter((q: any) => q.type === "designated").length },
+          byCategory: count(allQuotes, (q) => q.categoryName || "미지정"),
+          byRegion: count(allQuotes, (q) => (q.region || "미지정").split(" ")[0]),
+          matchRate: total ? matchedPlus / total : 0,
+          completeRate: total ? completed / total : 0,
+          cancelRate: total ? cancelled / total : 0,
+        },
+        users: { newUsers: allUsers.length, byRole: count(allUsers, (u) => u.role || "user") },
+        partners: { total: partners.length, byGrade: count(partners, (p: any) => p.grade || "bronze"), byStatus: count(partners, (p: any) => p.status) },
+        tokens: { charge: sumBy("charge"), deduct: sumBy("deduct"), refund: sumBy("refund"), expire: sumBy("expire"), txCount: tx.length },
+      };
+    }),
+    // 데이터 관리: raw export용 원본 (기간 필터는 클라이언트에서)
+    rawExport: adminProcedure.query(async () => ({
+      quotes: await db.getAllQuotes(),
+      users: await db.getAllUsers(),
+      partners: await db.getAllPartners(),
+      transactions: await db.getAllWalletTransactions(),
+    })),
     users: adminProcedure.query(async () => db.getAllUsers()),
     updateUserRole: adminProcedure.input(z.object({ userId: z.number(), role: z.enum(["user", "admin", "partner"]) })).mutation(async ({ input }) => {
       await db.updateUserRole(input.userId, input.role);

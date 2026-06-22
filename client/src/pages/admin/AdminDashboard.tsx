@@ -18,6 +18,7 @@ import { QUOTE_STATUS_LABELS, QUOTE_STATUS_COLOR, PARTNER_STATUS_LABELS, PARTNER
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const BannerManager = lazy(() => import("./BannerManager"));
+const AdminAnalytics = lazy(() => import("./AdminAnalytics"));
 const CategoryManager = lazy(() => import("./CategoryManager"));
 const AdminWalletManager = lazy(() => import("./AdminWalletManager"));
 
@@ -145,9 +146,21 @@ export default function AdminDashboard() {
         <div className="container max-w-6xl">
           <h1 className="text-2xl font-bold text-foreground mb-6">관리자 대시보드</h1>
 
+          {/* 3대 영역 전환 */}
+          {(() => {
+            const area = activeTab === "stats" ? "dashboard" : activeTab === "analytics" ? "analytics" : "settings";
+            return (
+              <div className="flex flex-wrap gap-2 mb-5">
+                <Button variant={area === "dashboard" ? "default" : "outline"} onClick={() => navigate("/admin/stats")}>대시보드</Button>
+                <Button variant={area === "analytics" ? "default" : "outline"} onClick={() => navigate("/admin/analytics")}>데이터 관리</Button>
+                <Button variant={area === "settings" ? "default" : "outline"} onClick={() => navigate("/admin/users")}>설정</Button>
+              </div>
+            );
+          })()}
+
           <Tabs value={activeTab} onValueChange={(v) => navigate(`/admin/${v}`)}>
+            {activeTab !== "stats" && activeTab !== "analytics" && (
             <TabsList className="bg-muted/50 flex-wrap h-auto gap-1">
-              <TabsTrigger value="stats">통계</TabsTrigger>
               <TabsTrigger value="users">회원</TabsTrigger>
               <TabsTrigger value="partners">파트너</TabsTrigger>
               <TabsTrigger value="quotes">견적</TabsTrigger>
@@ -158,6 +171,14 @@ export default function AdminDashboard() {
               <TabsTrigger value="backgrounds">배경 관리</TabsTrigger>
               <TabsTrigger value="banners">배너 관리</TabsTrigger>
             </TabsList>
+            )}
+
+            {/* 데이터 관리 */}
+            <TabsContent value="analytics" className="mt-4">
+              <Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+                <AdminAnalytics />
+              </Suspense>
+            </TabsContent>
 
             {/* Stats */}
             <TabsContent value="stats" className="mt-4">

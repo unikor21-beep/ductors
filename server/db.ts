@@ -1334,6 +1334,13 @@ export async function expirePoints() {
   return totalExpired;
 }
 
+// 전체 지갑 거래내역 (관리자 분석/엑셀용)
+export async function getAllWalletTransactions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(walletTransactions).orderBy(desc(walletTransactions.createdAt));
+}
+
 // 지갑 설정값 조회
 export async function getWalletSettings() {
   const db = await getDb();
