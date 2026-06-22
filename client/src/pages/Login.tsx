@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useEffect, useState } from "react";
 import { LogIn, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { toast } from "sonner";
 export default function Login() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
+  const searchString = useSearch();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -24,6 +25,15 @@ export default function Login() {
       navigate("/");
     }
   }, [loading, isAuthenticated, navigate]);
+
+  // 다른 페이지에서 로그인이 필요해 넘어온 경우 안내 토스트
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    const reason = params.get("reason");
+    if (reason === "quote") {
+      toast.info("견적 의뢰는 로그인 후 이용할 수 있습니다");
+    }
+  }, [searchString]);
 
   // 아이디/비밀번호 로그인
   const login = trpc.auth.login.useMutation({

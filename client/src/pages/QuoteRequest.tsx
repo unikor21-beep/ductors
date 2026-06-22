@@ -5,7 +5,6 @@ import CategorySelect from "@/components/CategorySelect";
 import RegionSelect from "@/components/RegionSelect";
 import PartnerAvatar from "@/components/PartnerAvatar";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +84,7 @@ export default function QuoteRequest() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      window.location.href = getLoginUrl();
+      window.location.href = "/login-local?reason=quote";
     }
   }, [loading, isAuthenticated]);
 
