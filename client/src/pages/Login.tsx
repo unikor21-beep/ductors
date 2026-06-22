@@ -93,7 +93,7 @@ export default function Login() {
                 />
               </div>
 
-              <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium text-white hover:opacity-90" style={{ backgroundColor: "#22c55e" }} disabled={login.isPending} onClick={handleLogin}>
+              <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium" disabled={login.isPending} onClick={handleLogin}>
                 {login.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
                 로그인
               </Button>

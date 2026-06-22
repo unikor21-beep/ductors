@@ -15,9 +15,6 @@ import { UserPlus, Check, X, Loader2, Wind } from "lucide-react";
 import { toast } from "sonner";
 import { SIGNUP_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
 
-// 로그인/가입 공용 브랜드 버튼 색 (밝은 그린)
-const BRAND_GREEN = "#22c55e";
-
 const SECURITY_QUESTIONS = [
   "어머니의 성함은?",
   "졸업한 초등학교 이름은?",
@@ -232,8 +229,7 @@ export default function Signup() {
 
                 {/* 가입 버튼 (밝은 그린) */}
                 <Button
-                  className="w-full h-12 rounded-xl gap-2 text-white hover:opacity-90"
-                  style={{ backgroundColor: BRAND_GREEN }}
+                  className="w-full h-12 rounded-xl gap-2"
                   disabled={!canAgree || !formValid || signup.isPending}
                   onClick={handleSubmit}
                 >
