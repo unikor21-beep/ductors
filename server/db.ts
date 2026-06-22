@@ -144,6 +144,15 @@ export async function updateUserRole(userId: number, role: "user" | "admin" | "p
 }
 
 // ===================== PARTNERS =====================
+// 사업자번호 중복 확인 — 하이픈/공백 무시한 숫자 기준
+export async function getPartnerByBusinessNumber(digits: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select({ id: partners.id }).from(partners)
+    .where(sql`REPLACE(REPLACE(${partners.businessNumber}, '-', ''), ' ', '') = ${digits}`).limit(1);
+  return r[0];
+}
+
 export async function createPartner(data: Omit<InsertPartner, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   if (!db) return null;

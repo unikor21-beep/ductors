@@ -427,6 +427,11 @@ export const appRouter = router({
           }
           // b_stt_cd: 01=계속사업자, 02=휴업자, 03=폐업자
           if (item.b_stt_cd === "01") {
+            // 이미 가입된 사업자번호인지 확인
+            const dup = await db.getPartnerByBusinessNumber(bno);
+            if (dup) {
+              return { ok: false, status: "duplicate", message: "이미 가입된 사업자번호입니다." };
+            }
             return { ok: true, status: "active", message: `정상 사업자입니다 (${item.tax_type})`, taxType: item.tax_type };
           } else if (item.b_stt_cd === "02") {
             return { ok: false, status: "closed_temp", message: "휴업 중인 사업자입니다." };
@@ -456,6 +461,13 @@ export const appRouter = router({
     })).mutation(async ({ ctx, input }) => {
       const existing = await db.getPartnerByUserId(ctx.user.id);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "이미 파트너 등록이 되어있습니다" });
+      // 사업자번호 중복 확인
+      if (input.businessNumber) {
+        const bnoDigits = input.businessNumber.replace(/\D/g, "");
+        if (bnoDigits.length === 10 && await db.getPartnerByBusinessNumber(bnoDigits)) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 가입된 사업자번호입니다" });
+        }
+      }
       // Geocode address if provided
       let latitude: string | undefined;
       let longitude: string | undefined;
