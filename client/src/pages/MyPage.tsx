@@ -46,6 +46,18 @@ function PartnerMyPage() {
   const [detailAddress, setDetailAddress] = useState("");
   const [initialized, setInitialized] = useState(false);
 
+  // 회원(파트너) 탈퇴
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawConfirmed, setWithdrawConfirmed] = useState(false);
+  const { data: withdrawInfo } = trpc.auth.getWithdrawInfo.useQuery(undefined, { enabled: showWithdraw });
+  const withdraw = trpc.auth.withdraw.useMutation({
+    onSuccess: () => {
+      toast.success("탈퇴 처리되었습니다. 그동안 이용해주셔서 감사합니다.");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   useEffect(() => {
     if (partner && !initialized) {
       setForm({
@@ -237,6 +249,67 @@ function PartnerMyPage() {
         {updateMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         변경사항 저장
       </Button>
+
+      {/* 회원 탈퇴 */}
+      <Card className="border-destructive/20 shadow-sm">
+        <CardHeader><CardTitle className="text-base text-muted-foreground">회원 탈퇴</CardTitle></CardHeader>
+        <CardContent>
+          {!showWithdraw ? (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">
+                탈퇴 시 계정이 비활성화되며 서비스를 더 이상 이용할 수 없습니다.
+              </p>
+              <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setShowWithdraw(true)}>
+                회원 탈퇴
+              </Button>
+            </>
+          ) : (
+            <div className="space-y-3">
+              {withdrawInfo && !withdrawInfo.canWithdraw ? (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-700 leading-relaxed">
+                    진행 중인 거래가 <strong>{withdrawInfo.activeQuotes}건</strong> 있습니다.
+                    모든 거래가 완료된 후 탈퇴할 수 있습니다.
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start gap-2 p-3 bg-destructive/5 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                    <div className="text-sm text-foreground leading-relaxed">
+                      <strong>탈퇴 전 꼭 확인하세요.</strong>
+                      <ul className="list-disc pl-4 mt-1.5 space-y-1 text-muted-foreground">
+                        <li>탈퇴 후 계정 정보는 복구할 수 없습니다.</li>
+                        {withdrawInfo?.isPartner && (withdrawInfo.tokenBalance > 0 || withdrawInfo.pointBalance > 0) && (
+                          <li className="text-destructive">
+                            보유 중인 토큰({withdrawInfo.tokenBalance.toLocaleString()}) / 포인트({withdrawInfo.pointBalance.toLocaleString()})는 모두 소멸됩니다.
+                          </li>
+                        )}
+                        <li>관련 법령에 따라 일부 정보는 일정 기간 보관됩니다.</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={withdrawConfirmed} onChange={(e) => setWithdrawConfirmed(e.target.checked)} className="w-4 h-4" />
+                    위 내용을 모두 확인했으며 탈퇴에 동의합니다.
+                  </label>
+                </>
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setShowWithdraw(false); setWithdrawConfirmed(false); }}>
+                  취소
+                </Button>
+                {withdrawInfo?.canWithdraw && (
+                  <Button variant="destructive" className="flex-1" disabled={!withdrawConfirmed || withdraw.isPending} onClick={() => withdraw.mutate({})}>
+                    {withdraw.isPending ? "처리 중..." : "탈퇴하기"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

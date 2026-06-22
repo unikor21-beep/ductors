@@ -96,7 +96,7 @@ export default function Login() {
               </Button>
 
               {/* 구분선 */}
-              <div className="relative my-2">
+              <div className="relative">
                 <Separator />
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
                   또는
