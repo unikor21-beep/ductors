@@ -68,6 +68,18 @@ export async function getUserByEmail(email: string) {
   return r[0];
 }
 
+// 아이디 찾기 — 이메일로 username·name 조회 (대소문자 무시, 탈퇴 제외)
+export async function getUsernameByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select({ username: users.username, name: users.name }).from(users)
+    .where(and(
+      sql`LOWER(${users.email}) = ${email.trim().toLowerCase()}`,
+      isNull(users.deletedAt),
+    )).limit(1);
+  return r[0];
+}
+
 // 휴대전화 중복 확인 — 하이픈/공백 무시한 숫자 기준, 탈퇴(deletedAt) 계정 제외
 export async function getUserByPhoneDigits(digits: string) {
   const db = await getDb();

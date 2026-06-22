@@ -166,6 +166,20 @@ export const appRouter = router({
         return { question: user.securityQuestion };
       }),
 
+    // 아이디 찾기: 이름 + 이메일 확인 → 마스킹된 아이디 안내
+    findUsername: publicProcedure
+      .input(z.object({ name: z.string().min(1), email: z.string().email() }))
+      .query(async ({ input }) => {
+        const u = await db.getUsernameByEmail(input.email);
+        if (!u || !u.username || (u.name || "").trim() !== input.name.trim()) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "일치하는 계정을 찾을 수 없습니다. 이름과 이메일을 확인해 주세요." });
+        }
+        // 아이디 일부 마스킹 (앞 3자리만 표시)
+        const id = u.username;
+        const masked = id.length <= 3 ? id[0] + "*".repeat(Math.max(1, id.length - 1)) : id.slice(0, 3) + "*".repeat(id.length - 3);
+        return { maskedUsername: masked };
+      }),
+
     // 비밀번호 찾기 2단계: 보안 답변 확인 → 비밀번호 재설정
     resetPassword: publicProcedure
       .input(z.object({

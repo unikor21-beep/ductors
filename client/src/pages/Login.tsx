@@ -69,7 +69,12 @@ export default function Login() {
             <CardContent className="p-6 space-y-4">
               {/* 아이디/비밀번호 로그인 (메인) */}
               <div>
-                <Label className="text-sm font-medium mb-1.5 block">아이디</Label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-sm font-medium">아이디</Label>
+                  <Link href="/find-id" className="text-xs text-muted-foreground hover:underline">
+                    아이디를 잊으셨나요?
+                  </Link>
+                </div>
                 <Input
                   placeholder="아이디"
                   autoComplete="off"
