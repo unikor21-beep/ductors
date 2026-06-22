@@ -191,6 +191,9 @@ export default function Signup() {
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">이메일 *</Label>
                   <Input type="email" placeholder="example@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  {form.email && !emailValid && (
+                    <p className="text-xs text-destructive mt-1">올바른 이메일 형식이 아닙니다 (예: name@email.com)</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">휴대전화 *</Label>
