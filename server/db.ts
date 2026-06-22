@@ -1,4 +1,4 @@
-import { eq, ne, desc, asc, and, or, sql, like, inArray, isNull, gte, lte } from "drizzle-orm";
+import { eq, ne, desc, asc, and, or, sql, like, inArray, isNull, gte, lte, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, partners, categories, categoryFields,
@@ -167,7 +167,12 @@ export async function updateUserProfile(userId: number, data: { name?: string; e
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(users).orderBy(desc(users.createdAt));
+  return db.select({
+    ...getTableColumns(users),
+    partnerStatus: partners.status,
+  }).from(users)
+    .leftJoin(partners, eq(partners.userId, users.id))
+    .orderBy(desc(users.createdAt));
 }
 
 export async function updateUserRole(userId: number, role: "user" | "admin" | "partner") {

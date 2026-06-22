@@ -75,7 +75,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="w-4 h-4" />
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${ROLE_BADGE_STYLE[user?.role || "user"]?.className || ""}`}
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded `}
                     style={{ backgroundColor: ROLE_BADGE_STYLE[user?.role || "user"]?.bg, color: ROLE_BADGE_STYLE[user?.role || "user"]?.color }}>
                     {ROLE_LABELS[user?.role || "user"] || "고객"}
                   </span>
@@ -150,7 +150,7 @@ export default function Header() {
               {isAuthenticated ? (
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 py-2">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${ROLE_BADGE_STYLE[user?.role || "user"]?.className || ""}`}
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded `}
                       style={{ backgroundColor: ROLE_BADGE_STYLE[user?.role || "user"]?.bg, color: ROLE_BADGE_STYLE[user?.role || "user"]?.color }}>
                       {ROLE_LABELS[user?.role || "user"] || "고객"}
                     </span>

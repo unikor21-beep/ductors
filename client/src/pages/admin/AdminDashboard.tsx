@@ -197,6 +197,7 @@ export default function AdminDashboard() {
                           <th className="text-left p-3 font-medium">가입일</th>
                           <th className="text-left p-3 font-medium">가입 방식</th>
                           <th className="text-left p-3 font-medium">역할</th>
+                          <th className="text-left p-3 font-medium">상태</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -214,15 +215,32 @@ export default function AdminDashboard() {
                               </Badge>
                             </td>
                             <td className="p-3">
-                              <span className={`text-[11px] font-medium px-2 py-0.5 rounded ${ROLE_BADGE_STYLE[u.role]?.className || ""}`}
+                              <span className="text-[11px] font-medium px-2 py-0.5 rounded"
                                 style={{ backgroundColor: ROLE_BADGE_STYLE[u.role]?.bg, color: ROLE_BADGE_STYLE[u.role]?.color }}>
                                 {ROLE_LABELS[u.role] || u.role}
                               </span>
                             </td>
+                            <td className="p-3">
+                              {(() => {
+                                const st = u.deletedAt ? { label: "탈퇴", color: "#dc2626" }
+                                  : u.role === "partner"
+                                    ? (u.partnerStatus === "pending" ? { label: "대기", color: "#86efac" }
+                                      : u.partnerStatus === "rejected" ? { label: "거절", color: "#f97316" }
+                                      : u.partnerStatus === "suspended" ? { label: "정지", color: "#dc2626" }
+                                      : { label: "정상", color: "#16a34a" })
+                                    : { label: "정상", color: "#16a34a" };
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: st.color }} />
+                                    {st.label}
+                                  </span>
+                                );
+                              })()}
+                            </td>
                           </tr>
                         ))}
                         {filteredUsers.length === 0 && (
-                          <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</td></tr>
+                          <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</td></tr>
                         )}
                       </tbody>
                     </table>
