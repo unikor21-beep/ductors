@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
 import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel, REGIONS } from "@shared/constants";
+import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, PARTNER_STATUS_BADGE, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel, REGIONS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const BannerManager = lazy(() => import("./BannerManager"));
@@ -297,20 +297,23 @@ export default function AdminDashboard() {
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between gap-4 mb-3">
                       <div className="min-w-0">
-                        <h3 onClick={() => setDetailPartner(p)} className="font-semibold text-foreground hover:text-primary cursor-pointer inline-flex items-center gap-1.5">
+                        <h3 onClick={() => setDetailPartner(p)} className="font-semibold text-foreground hover:text-primary cursor-pointer">
                           {p.companyName}
-                          {p.businessLicenseUrl ? (
-                            <span title="사업자등록증 첨부됨" className="inline-flex"><FileText className="w-4 h-4 text-primary" /></span>
-                          ) : (
-                            <span title="사업자등록증 미첨부" className="inline-flex"><AlertCircle className="w-4 h-4 text-amber-500" /></span>
-                          )}
                         </h3>
                         <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">사업자번호: {p.businessNumber || "-"}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 inline-flex items-center gap-1.5">
+                          사업자번호: {p.businessNumber || "-"}
+                          {p.businessLicenseUrl ? (
+                            <span title="사업자등록증 첨부됨" className="inline-flex"><FileText className="w-3.5 h-3.5 text-primary" /></span>
+                          ) : (
+                            <span title="사업자등록증 미첨부" className="inline-flex"><AlertCircle className="w-3.5 h-3.5 text-amber-500" /></span>
+                          )}
+                        </p>
                       </div>
-                      <Badge variant={p.status === "approved" ? "default" : "secondary"}>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${PARTNER_STATUS_BADGE[p.status]?.className || "bg-secondary text-secondary-foreground"}`}
+                        style={{ backgroundColor: PARTNER_STATUS_BADGE[p.status]?.bg, color: PARTNER_STATUS_BADGE[p.status]?.color }}>
                         {PARTNER_STATUS_LABELS[p.status] || p.status}
-                      </Badge>
+                      </span>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap border-t border-border/50 pt-3">
                       <div className="flex items-center gap-2">

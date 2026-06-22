@@ -394,6 +394,21 @@ export async function countActiveQuotesByCustomer(customerId: number) {
   return rows[0]?.count ?? 0;
 }
 
+// 파트너로서 진행 중인 시공 건 수 (선정된 견적 중 matched/in_progress)
+export async function countActiveJobsByPartner(partnerId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`count(*)` })
+    .from(quotes)
+    .innerJoin(quoteSubmissions, eq(quoteSubmissions.quoteId, quotes.id))
+    .where(and(
+      eq(quoteSubmissions.partnerId, partnerId),
+      eq(quoteSubmissions.status, "selected"),
+      inArray(quotes.status, ["matched", "in_progress"])
+    ));
+  return rows[0]?.count ?? 0;
+}
+
 // 회원 탈퇴 처리 (Soft Delete - 데이터 보관, 로그인 차단)
 export async function deactivateUser(userId: number, reason?: string) {
   const db = await getDb();

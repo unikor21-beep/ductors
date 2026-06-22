@@ -112,3 +112,12 @@ export const SECURITY_QUESTIONS = [
   "어릴 적 별명은?",
   "첫 반려동물의 이름은?",
 ];
+
+// 파트너 승인 상태 뱃지 스타일 (관리자 표)
+// 승인 완료=초록, 승인 대기=회색(기존), 승인 거부=주황, 정지=빨강(흰 글씨)
+export const PARTNER_STATUS_BADGE: Record<string, { className: string; bg?: string; color?: string }> = {
+  approved: { className: "bg-primary text-primary-foreground" },
+  pending: { className: "bg-secondary text-secondary-foreground" },
+  rejected: { className: "", bg: "#f97316", color: "#ffffff" },
+  suspended: { className: "", bg: "#dc2626", color: "#ffffff" },
+};

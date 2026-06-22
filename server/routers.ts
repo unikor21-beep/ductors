@@ -259,14 +259,17 @@ export const appRouter = router({
 
     // 탈퇴 가능 여부 + 잔액/진행건 확인
     getWithdrawInfo: protectedProcedure.query(async ({ ctx }) => {
-      const activeQuotes = await db.countActiveQuotesByCustomer(ctx.user.id);
+      const activeAsCustomer = await db.countActiveQuotesByCustomer(ctx.user.id);
       const partner = await db.getPartnerByUserId(ctx.user.id);
       let tokenBalance = 0;
       let pointBalance = 0;
+      let activeAsPartner = 0;
       if (partner) {
         tokenBalance = partner.tokenBalance ?? 0;
         pointBalance = partner.pointBalance ?? 0;
+        activeAsPartner = await db.countActiveJobsByPartner(partner.id);
       }
+      const activeQuotes = activeAsCustomer + activeAsPartner;
       return {
         activeQuotes,
         isPartner: !!partner,
@@ -280,16 +283,23 @@ export const appRouter = router({
     withdraw: protectedProcedure
       .input(z.object({ reason: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
-        // 진행중 견적이 있으면 탈퇴 차단
-        const activeQuotes = await db.countActiveQuotesByCustomer(ctx.user.id);
-        if (activeQuotes > 0) {
+        const partner = await db.getPartnerByUserId(ctx.user.id);
+        // 진행중 거래(고객 견적 + 파트너 시공)가 있으면 탈퇴 차단
+        const activeAsCustomer = await db.countActiveQuotesByCustomer(ctx.user.id);
+        const activeAsPartner = partner ? await db.countActiveJobsByPartner(partner.id) : 0;
+        const active = activeAsCustomer + activeAsPartner;
+        if (active > 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `진행 중인 견적이 ${activeQuotes}건 있습니다. 완료 후 탈퇴할 수 있습니다.`,
+            message: `진행 중인 거래가 ${active}건 있습니다. 완료 후 탈퇴할 수 있습니다.`,
           });
         }
-        // 탈퇴 처리 (비활성화)
+        // 탈퇴 처리 (계정 비활성화)
         await db.deactivateUser(ctx.user.id, input.reason);
+        // 파트너인 경우 상태를 '정지'로 → 파트너 찾기·지정 견적에서 제외 (기록은 보존)
+        if (partner) {
+          await db.updatePartnerStatus(partner.id, "suspended");
+        }
         // 세션 쿠키 제거
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
