@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
 import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, PARTNER_STATUS_BADGE, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel, REGIONS } from "@shared/constants";
+import { QUOTE_STATUS_LABELS, QUOTE_STATUS_COLOR, PARTNER_STATUS_LABELS, PARTNER_STATUS_BADGE, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel, REGIONS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const BannerManager = lazy(() => import("./BannerManager"));
@@ -48,6 +48,12 @@ export default function AdminDashboard() {
     set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   const partnerFiltersActive = pStatuses.length + pGrades.length + pRegions.length > 0;
 
+  // 견적 필터 (유형·공사유형·지역 다중)
+  const [qType, setQType] = useState<"all" | "public" | "designated">("all");
+  const [qCategories, setQCategories] = useState<string[]>([]);
+  const [qRegions, setQRegions] = useState<string[]>([]);
+  const quoteFiltersActive = qType !== "all" || qCategories.length + qRegions.length > 0;
+
   // 파트너 상세 모달 + 카테고리(전문분야) 매핑
   const [detailPartner, setDetailPartner] = useState<any | null>(null);
   const { data: allCategories } = trpc.categories.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
@@ -80,6 +86,14 @@ export default function AdminDashboard() {
     (pGrades.length === 0 || pGrades.includes(p.grade || "bronze")) &&
     (pRegions.length === 0 || (Array.isArray(p.regions) && p.regions.some((r: string) => pRegions.includes(r)))) &&
     (!pq || [p.companyName, p.representativeName, p.phone, p.email, p.businessNumber, String(p.id)].some((f) => norm(f).includes(pq)))
+  );
+
+  // 견적 필터링
+  const quoteCategoryOptions = Array.from(new Set((allQuotes || []).map((q: any) => q.categoryName).filter(Boolean))) as string[];
+  const filteredQuotes = (allQuotes || []).filter((q: any) =>
+    (qType === "all" || q.type === qType) &&
+    (qCategories.length === 0 || qCategories.includes(q.categoryName)) &&
+    (qRegions.length === 0 || qRegions.some((s) => (q.region || "").startsWith(s)))
   );
 
   const updatePartnerStatus = trpc.partners.updateStatus.useMutation({
@@ -384,7 +398,55 @@ export default function AdminDashboard() {
             </TabsContent>
 
             {/* Quotes */}
-            <TabsContent value="quotes" className="mt-4">
+            <TabsContent value="quotes" className="mt-4 space-y-3">
+              {/* 필터 */}
+              <Card className="border-border/50 shadow-sm">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">필터 <span className="text-muted-foreground font-normal">(여러 개 선택 가능)</span></span>
+                    {quoteFiltersActive && (
+                      <button onClick={() => { setQType("all"); setQCategories([]); setQRegions([]); }} className="text-xs text-primary hover:underline">필터 초기화</button>
+                    )}
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs text-muted-foreground w-16 shrink-0 pt-1.5">견적유형</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {([["all", "전체"], ["public", "공개"], ["designated", "지정"]] as const).map(([k, label]) => (
+                        <button key={k} onClick={() => setQType(k)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${qType === k ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {quoteCategoryOptions.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs text-muted-foreground w-16 shrink-0 pt-1.5">공사유형</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {quoteCategoryOptions.map((c) => (
+                          <button key={c} onClick={() => toggleIn(qCategories, setQCategories, c)}
+                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${qCategories.includes(c) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs text-muted-foreground w-16 shrink-0 pt-1.5">지역</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {REGIONS.map((r) => (
+                        <button key={r} onClick={() => toggleIn(qRegions, setQRegions, r)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${qRegions.includes(r) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">{filteredQuotes.length}건</p>
+                </CardContent>
+              </Card>
+
               <Card className="border-border/50 shadow-sm">
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -393,23 +455,38 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="text-left p-3 font-medium">ID</th>
                           <th className="text-left p-3 font-medium">제목</th>
+                          <th className="text-left p-3 font-medium">공사유형</th>
                           <th className="text-left p-3 font-medium">유형</th>
                           <th className="text-left p-3 font-medium">지역</th>
                           <th className="text-left p-3 font-medium">상태</th>
+                          <th className="text-left p-3 font-medium">매칭 파트너</th>
                           <th className="text-left p-3 font-medium">등록일</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(allQuotes || []).map((q) => (
-                          <tr key={q.id} className="border-b border-border/50 hover:bg-muted/30">
-                            <td className="p-3">{q.id}</td>
-                            <td className="p-3 font-medium">{q.title}</td>
-                            <td className="p-3"><Badge variant="outline">{q.type === "public" ? "공개" : "지정"}</Badge></td>
-                            <td className="p-3 text-muted-foreground">{q.region || "-"}</td>
-                            <td className="p-3"><Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge></td>
-                            <td className="p-3 text-muted-foreground">{new Date(q.createdAt).toLocaleDateString("ko-KR")}</td>
-                          </tr>
-                        ))}
+                        {filteredQuotes.map((q: any) => {
+                          const matchedPartner = q.selectedPartnerName || ((["matched", "in_progress", "completed"].includes(q.status)) ? q.designatedPartnerName : null);
+                          const sc = QUOTE_STATUS_COLOR[q.status];
+                          return (
+                            <tr key={q.id} className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="p-3">{q.id}</td>
+                              <td className="p-3 font-medium">{q.title}</td>
+                              <td className="p-3 text-muted-foreground">{q.categoryName || "-"}</td>
+                              <td className="p-3"><Badge variant="outline">{q.type === "public" ? "공개" : "지정"}</Badge></td>
+                              <td className="p-3 text-muted-foreground">{q.region || "-"}</td>
+                              <td className="p-3">
+                                <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: sc?.bg, color: sc?.color }}>
+                                  {QUOTE_STATUS_LABELS[q.status] || q.status}
+                                </span>
+                              </td>
+                              <td className="p-3 text-muted-foreground">{matchedPartner || "-"}</td>
+                              <td className="p-3 text-muted-foreground">{new Date(q.createdAt).toLocaleDateString("ko-KR")}</td>
+                            </tr>
+                          );
+                        })}
+                        {filteredQuotes.length === 0 && (
+                          <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">견적이 없습니다</td></tr>
+                        )}
                       </tbody>
                     </table>
                   </div>

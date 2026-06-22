@@ -1,5 +1,6 @@
 import { eq, ne, desc, asc, and, or, sql, like, inArray, isNull, gte, lte, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { alias } from "drizzle-orm/mysql-core";
 import {
   InsertUser, users, partners, categories, categoryFields,
   quotes, quoteViews, quoteSubmissions, reviews, portfolios, chatMessages,
@@ -491,7 +492,19 @@ export async function getDesignatedQuotes(partnerId: number) {
 export async function getAllQuotes() {
   const db = await getDb();
   if (!db) return [];
-  return db.select(quoteListColumns).from(quotes).orderBy(desc(quotes.createdAt));
+  const selp = alias(partners, "selp");
+  const dp = alias(partners, "dp");
+  return db.select({
+    ...quoteListColumns,
+    categoryName: categories.name,
+    selectedPartnerName: selp.companyName,
+    designatedPartnerName: dp.companyName,
+  }).from(quotes)
+    .leftJoin(categories, eq(categories.id, quotes.categoryId))
+    .leftJoin(quoteSubmissions, and(eq(quoteSubmissions.quoteId, quotes.id), eq(quoteSubmissions.status, "selected")))
+    .leftJoin(selp, eq(selp.id, quoteSubmissions.partnerId))
+    .leftJoin(dp, eq(dp.id, quotes.designatedPartnerId))
+    .orderBy(desc(quotes.createdAt));
 }
 
 export async function updateQuoteStatus(id: number, status: string) {
@@ -781,6 +794,8 @@ export async function createReview(data: { quoteId: number; customerId: number; 
   const allReviews = await db.select().from(reviews).where(eq(reviews.partnerId, data.partnerId));
   const avg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length;
   await db.update(partners).set({ avgRating: avg.toFixed(2), reviewCount: allReviews.length }).where(eq(partners.id, data.partnerId));
+  // 평점 변동 → 등급 자동 재평가
+  await evaluateAndUpdatePartnerGrade(data.partnerId);
   return result.id;
 }
 
@@ -970,21 +985,44 @@ export async function updatePartnerGrade(id: number, grade: "bronze" | "silver" 
 
 // ===================== AUTO GRADE EVALUATION =====================
 
-/** 등급 기준 테이블
- * | 등급       | 시공완료 건수 | 평균 평점 |
- * |-----------|------------|---------|
- * | 브론즈     | 0+         | 0+      |
- * | 실버       | 3+         | 3.5+    |
- * | 골드       | 10+        | 4.0+    |
- * | 플래티넘   | 30+        | 4.5+    |
+/** 등급 기준 (누적 시공완료 건수 + 평균 평점, 둘 다 충족 시 승급)
+ * | 등급       | 시공완료 | 평균 평점 |
+ * |-----------|--------|---------|
+ * | 브론즈     | 0~4건   | -       |
+ * | 실버       | 5건+    | 4.0+    |
+ * | 골드       | 20건+   | 4.3+    |
+ * | 플래티넘   | 50건+   | 4.5+    |
+ * 추가: 취소율 페널티(표본 5건↑ & 취소율 20%↑이면 한 등급 강등). 승급·강등 모두 자동.
  */
 
 export const GRADE_RULES = [
-  { grade: "platinum" as const, minCompleted: 30, minRating: 4.5 },
-  { grade: "gold" as const, minCompleted: 10, minRating: 4.0 },
-  { grade: "silver" as const, minCompleted: 3, minRating: 3.5 },
+  { grade: "platinum" as const, minCompleted: 50, minRating: 4.5 },
+  { grade: "gold" as const, minCompleted: 20, minRating: 4.3 },
+  { grade: "silver" as const, minCompleted: 5, minRating: 4.0 },
   { grade: "bronze" as const, minCompleted: 0, minRating: 0 },
 ];
+
+const GRADE_ORDER = ["bronze", "silver", "gold", "platinum"] as const;
+function demoteOneGrade(g: string): "bronze" | "silver" | "gold" | "platinum" {
+  const i = GRADE_ORDER.indexOf(g as any);
+  return GRADE_ORDER[Math.max(0, i - 1)];
+}
+
+// 파트너 실적: 선정된 견적 중 완료/취소 건수 (취소율 산정용)
+export async function getPartnerJobStats(partnerId: number): Promise<{ completed: number; cancelled: number }> {
+  const db = await getDb();
+  if (!db) return { completed: 0, cancelled: 0 };
+  const rows = await db.select({ status: quotes.status })
+    .from(quotes)
+    .innerJoin(quoteSubmissions, eq(quoteSubmissions.quoteId, quotes.id))
+    .where(and(eq(quoteSubmissions.partnerId, partnerId), eq(quoteSubmissions.status, "selected")));
+  let completed = 0, cancelled = 0;
+  for (const r of rows) {
+    if (r.status === "completed") completed++;
+    else if (r.status === "cancelled") cancelled++;
+  }
+  return { completed, cancelled };
+}
 
 export async function getCompletedProjectCount(partnerId: number): Promise<number> {
   const db = await getDb();
@@ -1010,10 +1048,15 @@ export async function evaluateAndUpdatePartnerGrade(partnerId: number): Promise<
   const partner = await getPartnerById(partnerId);
   if (!partner) return { oldGrade: "bronze", newGrade: "bronze", changed: false };
 
-  const completedCount = await getCompletedProjectCount(partnerId);
+  const { completed, cancelled } = await getPartnerJobStats(partnerId);
   const avgRating = parseFloat(String(partner.avgRating || "0"));
   const oldGrade = partner.grade || "bronze";
-  const newGrade = calculateGrade(completedCount, avgRating);
+  let newGrade = calculateGrade(completed, avgRating);
+
+  // 취소율 페널티: 표본 5건 이상이고 취소율 20% 이상이면 한 등급 강등
+  const total = completed + cancelled;
+  const cancelRate = total > 0 ? cancelled / total : 0;
+  if (total >= 5 && cancelRate >= 0.2) newGrade = demoteOneGrade(newGrade);
 
   if (newGrade !== oldGrade) {
     await updatePartnerGrade(partnerId, newGrade);

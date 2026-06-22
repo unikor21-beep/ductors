@@ -121,3 +121,16 @@ export const PARTNER_STATUS_BADGE: Record<string, { className: string; bg?: stri
   rejected: { className: "", bg: "#f97316", color: "#ffffff" },
   suspended: { className: "", bg: "#dc2626", color: "#ffffff" },
 };
+
+// 견적 상태 색상 (관리자 견적 표) — 단계별 색
+export const QUOTE_STATUS_COLOR: Record<string, { bg: string; color: string }> = {
+  registered: { bg: "#f1f5f9", color: "#475569" }, // 요청 등록 (회색)
+  pending:    { bg: "#f1f5f9", color: "#475569" }, // 열람 전
+  viewed:     { bg: "#e0f2fe", color: "#0369a1" }, // 열람 완료 (하늘)
+  quoted:     { bg: "#dbeafe", color: "#1d4ed8" }, // 견적 제출 (파랑)
+  reviewing:  { bg: "#fef9c3", color: "#a16207" }, // 고객 검토 중 (노랑)
+  matched:    { bg: "#dcfce7", color: "#15803d" }, // 매칭 완료 (연초록)
+  in_progress:{ bg: "#cffafe", color: "#0e7490" }, // 시공 진행 중 (청록)
+  completed:  { bg: "#16a34a", color: "#ffffff" }, // 거래 완료 (초록 채움)
+  cancelled:  { bg: "#fee2e2", color: "#b91c1c" }, // 취소 (빨강)
+};

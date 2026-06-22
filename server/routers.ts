@@ -456,8 +456,11 @@ export const appRouter = router({
     closeWithoutPartner: protectedProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
       const quote = await db.getQuoteById(input.quoteId);
       if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+      const closePid = await db.getSelectedPartnerId(input.quoteId);
       await db.rejectAllSubmissions(input.quoteId);
       await db.updateQuoteStatus(input.quoteId, "cancelled");
+      // 선정 파트너가 있던 거래가 취소된 경우 등급 재평가(취소율 반영)
+      if (closePid) await db.evaluateAndUpdatePartnerGrade(closePid);
       return { success: true };
     }),
     // 고객: 시공 완료 (매칭/시공중 → 완료) + 선정 파트너에게 알림
@@ -466,6 +469,9 @@ export const appRouter = router({
       if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
       if (quote.status !== "matched" && quote.status !== "in_progress") throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후 시공 완료 처리할 수 있습니다" });
       await db.updateQuoteStatus(input.quoteId, "completed");
+      // 선정 파트너 등급 자동 재평가 (완료 건수 반영)
+      const completedPid = (await db.getSelectedPartnerId(input.quoteId)) ?? quote.designatedPartnerId ?? null;
+      if (completedPid) await db.evaluateAndUpdatePartnerGrade(completedPid);
       // 파트너 알림은 리뷰 등록 시 [리뷰 등록] 메시지로 통합 발송됨 (별도 시공완료 메시지 없음)
       return { success: true };
     }),
