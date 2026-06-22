@@ -577,6 +577,15 @@ export const appRouter = router({
       if (!ctx.partner) throw new TRPCError({ code: "NOT_FOUND" });
       const id = await db.createQuoteSubmission({ ...input, partnerId: ctx.partner.id });
       await db.updateQuoteStatus(input.quoteId, "quoted");
+      // 고객에게 견적 도착 알림 (파트너 → 고객)
+      const amountText = input.amount && input.amount.trim() ? ` 견적 금액: ${input.amount.trim()}.` : "";
+      await db.sendChatMessage({
+        quoteId: input.quoteId,
+        partnerId: ctx.partner.id,
+        senderRole: "partner",
+        senderId: ctx.partner.userId,
+        message: `[견적 도착] ${ctx.partner.companyName} 업체가 견적을 보냈습니다.${amountText} 받은 견적에서 확인해 주세요.`,
+      });
       return { id };
     }),
     mySubmissions: partnerProcedure.query(async ({ ctx }) => {
