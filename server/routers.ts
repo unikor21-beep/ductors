@@ -388,8 +388,7 @@ export const appRouter = router({
       if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
       if (quote.status !== "matched" && quote.status !== "in_progress") throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후 시공 완료 처리할 수 있습니다" });
       await db.updateQuoteStatus(input.quoteId, "completed");
-      const selectedPartnerId = await db.getSelectedPartnerId(input.quoteId);
-      if (selectedPartnerId) await db.sendChatMessage({ quoteId: input.quoteId, partnerId: selectedPartnerId, senderRole: "customer", senderId: ctx.user.id, message: "[시공 완료] 고객님이 시공 완료 처리했습니다. 수고하셨습니다." });
+      // 파트너 알림은 리뷰 등록 시 [리뷰 등록] 메시지로 통합 발송됨 (별도 시공완료 메시지 없음)
       return { success: true };
     }),
     // Admin
@@ -483,9 +482,18 @@ export const appRouter = router({
           console.warn("[Geocode] Failed to geocode address:", e);
         }
       }
-      const id = await db.createPartner({ ...input, userId: ctx.user.id, latitude, longitude });
-      await db.updateUserRole(ctx.user.id, "partner");
-      return { id };
+      try {
+        const id = await db.createPartner({ ...input, userId: ctx.user.id, latitude, longitude });
+        await db.updateUserRole(ctx.user.id, "partner");
+        return { id };
+      } catch (e: any) {
+        console.error("[파트너등록] 저장 실패:", e?.code, e?.sqlMessage || e?.message);
+        // 첨부 컬럼 용량(LONGTEXT) 미적용 등 데이터 길이 초과
+        if (e?.code === "ER_DATA_TOO_LONG" || /too long/i.test(e?.sqlMessage || e?.message || "")) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "첨부 파일 저장 용량 설정이 필요합니다. 관리자에게 문의해 주세요. (DB 컬럼 확장 스크립트 미실행)" });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "가입 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." });
+      }
     }),
     me: protectedProcedure.query(async ({ ctx }) => db.getPartnerByUserId(ctx.user.id)),
     getById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => db.getPartnerById(input.id)),
@@ -747,9 +755,9 @@ export const appRouter = router({
       const existing = await db.getReviewByQuote(input.quoteId, ctx.user.id);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "이미 리뷰를 작성했습니다" });
       const id = await db.createReview({ ...input, customerId: ctx.user.id });
-      // 파트너에게 별점+후기 내용 알림
+      // 파트너에게 시공완료+별점+후기 통합 알림
       const stars = "★".repeat(input.rating) + "☆".repeat(5 - input.rating);
-      const reviewMsg = `[리뷰 등록] 고객님이 후기를 남겼습니다.\n별점: ${stars} (${input.rating}/5)`
+      const reviewMsg = `[리뷰 등록] 고객님이 시공 완료 처리했습니다.\n별점: ${stars} (${input.rating}/5)`
         + (input.content && input.content.trim() ? `\n"${input.content.trim()}"` : "");
       await db.sendChatMessage({ quoteId: input.quoteId, partnerId: input.partnerId, senderRole: "customer", senderId: ctx.user.id, message: reviewMsg });
       // Auto-evaluate partner grade after new review
