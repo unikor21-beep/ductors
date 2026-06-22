@@ -31,7 +31,7 @@ export default function Login() {
     const params = new URLSearchParams(searchString);
     const reason = params.get("reason");
     if (reason === "quote") {
-      toast.info("견적 의뢰는 로그인 후 이용할 수 있습니다");
+      toast.error("견적 의뢰는 로그인 후 이용할 수 있습니다");
     }
   }, [searchString]);
 
