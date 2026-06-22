@@ -13,10 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { useEffect, useState, useRef } from "react";
-import { FileText, Loader2, User, ImagePlus, X, Save, AlertTriangle } from "lucide-react";
-import { REGIONS, REGION_GROUPS } from "@shared/constants";
+import { FileText, Loader2, User, ImagePlus, X, Save, AlertTriangle, Check } from "lucide-react";
+import { REGIONS, REGION_GROUPS, SECURITY_QUESTIONS } from "@shared/constants";
+import { AREA_CODES, formatMobileInput, isValidMobile, formatLandlineLocal, composeLandline } from "@shared/phone";
 import { toast } from "sonner";
 
 // ── 파트너 마이페이지 ────────────────────────────────────
@@ -245,12 +247,52 @@ function UserMyPage({ user }: { user: any }) {
   const utils = trpc.useUtils();
   const { data: myQuotes, isLoading: quotesLoading } = trpc.quotes.myQuotes.useQuery(undefined, { enabled: isAuthenticated });
 
-  // 정보 수정 폼
-  const [profile, setProfile] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
+  // 정보 수정 폼 (가입과 동일 항목)
+  const parseLandline = (raw?: string | null) => {
+    const digits = (raw || "").replace(/\D/g, "");
+    const area = [...AREA_CODES].sort((a, b) => b.length - a.length).find((a) => digits.startsWith(a));
+    if (!area) return { area: "02", local: "" };
+    return { area, local: formatLandlineLocal(digits.slice(area.length)) };
+  };
+  const [profile, setProfile] = useState(() => {
+    const ll = parseLandline(user?.landline as any);
+    return {
+      name: user?.name || "",
+      email: user?.email || "",
+      mobile: formatMobileInput(user?.phone || ""),
+      landlineArea: ll.area,
+      landlineLocal: ll.local,
+      securityQuestion: (user as any)?.securityQuestion || SECURITY_QUESTIONS[0],
+      securityAnswer: "",
+    };
   });
+  const [profileInit, setProfileInit] = useState(false);
+  useEffect(() => {
+    if (user && !profileInit) {
+      const ll = parseLandline((user as any).landline);
+      setProfile((p) => ({
+        ...p,
+        name: user.name || "",
+        email: user.email || "",
+        mobile: formatMobileInput(user.phone || ""),
+        landlineArea: ll.area,
+        landlineLocal: ll.local,
+        securityQuestion: (user as any).securityQuestion || SECURITY_QUESTIONS[0],
+      }));
+      setProfileInit(true);
+    }
+  }, [user, profileInit]);
+
+  // 검증 + 중복확인 (본인 값은 제외)
+  const profEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email);
+  const emailChanged = profile.email.trim().toLowerCase() !== (user?.email || "").trim().toLowerCase();
+  const profEmailCheck = trpc.auth.checkEmail.useQuery({ email: profile.email }, { enabled: profEmailValid && emailChanged, staleTime: 0 });
+  const profEmailTaken = profEmailValid && emailChanged && profEmailCheck.data?.available === false;
+
+  const profMobileValid = isValidMobile(profile.mobile);
+  const mobileChanged = profile.mobile.replace(/\D/g, "") !== (user?.phone || "").replace(/\D/g, "");
+  const profPhoneCheck = trpc.auth.checkPhone.useQuery({ phone: profile.mobile }, { enabled: profMobileValid && mobileChanged, staleTime: 0 });
+  const profPhoneTaken = profMobileValid && mobileChanged && profPhoneCheck.data?.available === false;
   const [showConvertWarning, setShowConvertWarning] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawConfirmed, setWithdrawConfirmed] = useState(false);
@@ -276,7 +318,18 @@ function UserMyPage({ user }: { user: any }) {
 
   const handleSaveProfile = () => {
     if (!profile.name) { toast.error("이름을 입력하세요"); return; }
-    updateProfile.mutate(profile);
+    if (!profEmailValid) { toast.error("올바른 이메일을 입력하세요"); return; }
+    if (profEmailTaken) { toast.error("이미 사용 중인 이메일입니다"); return; }
+    if (!profMobileValid) { toast.error("휴대전화 번호를 정확히 입력하세요"); return; }
+    if (profPhoneTaken) { toast.error("이미 가입된 전화번호입니다"); return; }
+    updateProfile.mutate({
+      name: profile.name,
+      email: profile.email,
+      phone: profile.mobile,
+      landline: composeLandline(profile.landlineArea, profile.landlineLocal) || "",
+      securityQuestion: profile.securityQuestion,
+      securityAnswer: profile.securityAnswer || undefined,
+    });
   };
 
   return (
@@ -331,10 +384,36 @@ function UserMyPage({ user }: { user: any }) {
               <div>
                 <Label className="text-sm font-medium mb-1.5 block">이메일</Label>
                 <Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} placeholder="email@example.com" />
+                {profile.email && !profEmailValid && <p className="text-xs text-destructive mt-1">올바른 이메일 형식이 아닙니다</p>}
+                {profEmailTaken && <p className="text-xs text-destructive mt-1">이미 사용 중인 이메일입니다</p>}
               </div>
               <div>
-                <Label className="text-sm font-medium mb-1.5 block">전화번호</Label>
-                <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="010-0000-0000" />
+                <Label className="text-sm font-medium mb-1.5 block">휴대전화</Label>
+                <Input value={profile.mobile} onChange={(e) => setProfile({ ...profile, mobile: formatMobileInput(e.target.value) })} placeholder="010-0000-0000" inputMode="numeric" />
+                {profile.mobile && !profMobileValid && <p className="text-xs text-destructive mt-1">휴대전화 번호를 정확히 입력하세요 (예: 010-1234-5678)</p>}
+                {profPhoneTaken && <p className="text-xs text-destructive mt-1">이미 가입된 전화번호입니다</p>}
+                {profMobileValid && mobileChanged && !profPhoneTaken && profPhoneCheck.data?.available === true && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><Check className="w-3 h-3" /> 사용 가능한 번호입니다</p>
+                )}
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">전화번호 <span className="text-xs text-muted-foreground font-normal">(선택)</span></Label>
+                <div className="flex gap-2">
+                  <Select value={profile.landlineArea} onValueChange={(v) => setProfile({ ...profile, landlineArea: v })}>
+                    <SelectTrigger className="w-24 shrink-0"><SelectValue /></SelectTrigger>
+                    <SelectContent>{AREA_CODES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Input className="flex-1" value={profile.landlineLocal} onChange={(e) => setProfile({ ...profile, landlineLocal: formatLandlineLocal(e.target.value) })} placeholder="123-4567" inputMode="numeric" />
+                </div>
+              </div>
+              <div className="pt-2 border-t border-border/40">
+                <Label className="text-sm font-medium mb-1.5 block">보안 질문 <span className="text-xs text-muted-foreground font-normal">(비밀번호 찾기에 사용)</span></Label>
+                <Select value={profile.securityQuestion} onValueChange={(v) => setProfile({ ...profile, securityQuestion: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{SECURITY_QUESTIONS.map((q) => <SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+                </Select>
+                <Input className="mt-2" value={profile.securityAnswer} onChange={(e) => setProfile({ ...profile, securityAnswer: e.target.value })} placeholder="답변 변경 시에만 입력" autoComplete="off" />
+                <p className="text-xs text-muted-foreground mt-1">답변을 비워두면 기존 답변이 유지됩니다.</p>
               </div>
               <Button onClick={handleSaveProfile} className="w-full gap-2" disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

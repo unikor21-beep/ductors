@@ -149,13 +149,16 @@ export async function snoozePasswordReminder(userId: number) {
 }
 
 // 고객 프로필 수정 (이름/이메일/전화번호)
-export async function updateUserProfile(userId: number, data: { name?: string; email?: string; phone?: string }) {
+export async function updateUserProfile(userId: number, data: { name?: string; email?: string; phone?: string; landline?: string | null; securityQuestion?: string; securityAnswerHash?: string }) {
   const db = await getDb();
   if (!db) return;
   const updates: Record<string, unknown> = {};
   if (data.name !== undefined) updates.name = data.name;
   if (data.email !== undefined) updates.email = data.email;
   if (data.phone !== undefined) updates.phone = data.phone;
+  if (data.landline !== undefined) updates.landline = data.landline;
+  if (data.securityQuestion !== undefined) updates.securityQuestion = data.securityQuestion;
+  if (data.securityAnswerHash !== undefined) updates.securityAnswerHash = data.securityAnswerHash;
   if (Object.keys(updates).length === 0) return;
   await db.update(users).set(updates).where(eq(users.id, userId));
 }

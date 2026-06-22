@@ -65,18 +65,40 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // 고객 프로필 수정 (이름/이메일/전화번호)
+    // 고객 프로필 수정 (이름/이메일/휴대전화/유선/보안질문)
     updateProfile: protectedProcedure
       .input(z.object({
         name: z.string().min(1, "이름을 입력하세요").optional(),
         email: z.string().email("올바른 이메일 형식이 아닙니다").optional().or(z.literal("")),
         phone: z.string().optional(),
+        landline: z.string().optional(),
+        securityQuestion: z.string().optional(),
+        securityAnswer: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // 이메일 중복 (본인 제외)
+        if (input.email) {
+          const e = await db.getUserByEmail(input.email);
+          if (e && e.id !== ctx.user.id) throw new TRPCError({ code: "CONFLICT", message: "이미 사용 중인 이메일입니다" });
+        }
+        // 휴대전화 중복 (본인 제외)
+        if (input.phone) {
+          const digits = input.phone.replace(/\D/g, "");
+          if (digits.length >= 10) {
+            const p = await db.getUserByPhoneDigits(digits);
+            if (p && p.id !== ctx.user.id) throw new TRPCError({ code: "CONFLICT", message: "이미 가입된 전화번호입니다" });
+          }
+        }
+        // 보안 답변은 입력된 경우에만 갱신(해시)
+        const securityAnswerHash = input.securityAnswer && input.securityAnswer.trim()
+          ? await hashPassword(input.securityAnswer.trim().toLowerCase()) : undefined;
         await db.updateUserProfile(ctx.user.id, {
           name: input.name,
           email: input.email || undefined,
           phone: input.phone,
+          landline: input.landline !== undefined ? (input.landline || null) : undefined,
+          securityQuestion: input.securityQuestion,
+          securityAnswerHash,
         });
         return { success: true };
       }),

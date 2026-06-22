@@ -16,14 +16,8 @@ import { toast } from "sonner";
 import { SIGNUP_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
 import { AREA_CODES, formatMobileInput, isValidMobile, formatLandlineLocal, composeLandline } from "@shared/phone";
 import { checkPassword, isPasswordValid, PASSWORD_RULES } from "@shared/password";
+import { SECURITY_QUESTIONS } from "@shared/constants";
 
-const SECURITY_QUESTIONS = [
-  "어머니의 성함은?",
-  "졸업한 초등학교 이름은?",
-  "가장 좋아하는 음식은?",
-  "어릴 적 별명은?",
-  "첫 반려동물의 이름은?",
-];
 
 export default function Signup() {
   const { isAuthenticated, loading } = useAuth();

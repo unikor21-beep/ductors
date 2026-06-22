@@ -103,3 +103,12 @@ export const ROLE_BADGE_STYLE: Record<string, { className: string; bg?: string; 
   partner: { className: "", bg: "#84cc16", color: "#ffffff" },
   admin: { className: "bg-purple-100 text-purple-700" },
 };
+
+// 보안 질문 (가입·정보수정 공용)
+export const SECURITY_QUESTIONS = [
+  "어머니의 성함은?",
+  "졸업한 초등학교 이름은?",
+  "가장 좋아하는 음식은?",
+  "어릴 적 별명은?",
+  "첫 반려동물의 이름은?",
+];
