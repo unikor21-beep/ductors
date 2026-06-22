@@ -2,12 +2,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AddressSearch from "@/components/AddressSearch";
 import PartnerAvatar from "@/components/PartnerAvatar";
+import MyQuoteCard from "@/components/MyQuoteCard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
 import { useEffect, useState, useRef } from "react";
 import { FileText, Loader2, User, ImagePlus, X, Save, AlertTriangle } from "lucide-react";
-import { QUOTE_STATUS_LABELS } from "@shared/constants";
 import { REGIONS, REGION_GROUPS } from "@shared/constants";
 import { toast } from "sonner";
 
@@ -314,22 +313,7 @@ function UserMyPage({ user }: { user: any }) {
           ) : (
             <div className="space-y-3">
               {myQuotes.map((q) => (
-                <Card key={q.id} className="border-border/50 shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h3 className="font-semibold truncate">{q.title}</h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                          <span>{q.region || "미지정"}</span>
-                          <span>{new Date(q.createdAt).toLocaleDateString("ko-KR")}</span>
-                        </div>
-                      </div>
-                      <Badge variant={q.status === "completed" ? "default" : "secondary"} className="shrink-0">
-                        {QUOTE_STATUS_LABELS[q.status] || q.status}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+                <MyQuoteCard key={q.id} q={q} />
               ))}
             </div>
           )}

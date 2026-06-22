@@ -296,7 +296,7 @@ export const appRouter = router({
       const id = await db.createQuote({ ...input, customerId: ctx.user.id, formData: input.formData || {}, attachments: input.attachments || [] });
       return { id };
     }),
-    myQuotes: protectedProcedure.query(async ({ ctx }) => db.getQuotesByCustomer(ctx.user.id)),
+    myQuotes: protectedProcedure.query(async ({ ctx }) => db.getQuotesByCustomerWithCounts(ctx.user.id)),
     getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => db.getQuoteById(input.id)),
     // 파트너용 상세 (열람한 견적만 의뢰자 정보 포함)
     detailForPartner: partnerProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
@@ -323,7 +323,12 @@ export const appRouter = router({
       if (!ctx.partner) return [];
       return db.getDesignatedQuotes(ctx.partner.id);
     }),
-    submissions: protectedProcedure.input(z.object({ quoteId: z.number() })).query(async ({ input }) => db.getSubmissionsByQuote(input.quoteId)),
+    submissions: protectedProcedure.input(z.object({ quoteId: z.number() })).query(async ({ ctx, input }) => {
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote) return [];
+      if (quote.customerId !== ctx.user.id && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "조회 권한이 없습니다" });
+      return db.getSubmissionsByQuote(input.quoteId);
+    }),
     updateStatus: protectedProcedure.input(z.object({ id: z.number(), status: z.string() })).mutation(async ({ input }) => {
       await db.updateQuoteStatus(input.id, input.status);
       return { success: true };
@@ -642,6 +647,21 @@ export const appRouter = router({
       if (!ctx.partner) return [];
       return db.getChatRoomsByPartner(ctx.partner.id);
     }),
+
+    // 읽음 처리 (채팅방 열 때)
+    markRead: protectedProcedure
+      .input(z.object({ quoteId: z.number(), partnerId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const quote = await db.getQuoteById(input.quoteId);
+        if (!quote) return { success: false };
+        const myPartner = await db.getPartnerByUserId(ctx.user.id);
+        let readerRole: "customer" | "partner";
+        if (quote.customerId === ctx.user.id) readerRole = "customer";
+        else if (myPartner && myPartner.id === input.partnerId) readerRole = "partner";
+        else throw new TRPCError({ code: "FORBIDDEN" });
+        await db.markChatRead(input.quoteId, input.partnerId, readerRole);
+        return { success: true };
+      }),
   }),
 
   // ===================== REVIEWS =====================

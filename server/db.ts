@@ -432,7 +432,80 @@ export async function createQuoteSubmission(data: { quoteId: number; partnerId: 
 export async function getSubmissionsByQuote(quoteId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(quoteSubmissions).where(eq(quoteSubmissions.quoteId, quoteId)).orderBy(desc(quoteSubmissions.createdAt));
+  const subs = await db.select({
+    id: quoteSubmissions.id,
+    quoteId: quoteSubmissions.quoteId,
+    partnerId: quoteSubmissions.partnerId,
+    amount: quoteSubmissions.amount,
+    description: quoteSubmissions.description,
+    estimatedDays: quoteSubmissions.estimatedDays,
+    status: quoteSubmissions.status,
+    createdAt: quoteSubmissions.createdAt,
+  }).from(quoteSubmissions).where(eq(quoteSubmissions.quoteId, quoteId)).orderBy(desc(quoteSubmissions.createdAt));
+  if (subs.length === 0) return [];
+  // 파트너 정보
+  const partnerIds = subs.map((s) => s.partnerId).filter((v, i, a) => a.indexOf(v) === i);
+  const ps = await db.select().from(partners).where(inArray(partners.id, partnerIds));
+  const pMap = new Map(ps.map((p) => [p.id, p]));
+  // 파트너별 미읽음(파트너→고객) 메시지 수
+  const unreadRows = await db.select({
+    partnerId: chatMessages.partnerId,
+    cnt: sql<number>`count(*)`,
+  }).from(chatMessages)
+    .where(and(
+      eq(chatMessages.quoteId, quoteId),
+      eq(chatMessages.senderRole, "partner"),
+      eq(chatMessages.isRead, false),
+    ))
+    .groupBy(chatMessages.partnerId);
+  const unreadMap = new Map(unreadRows.map((r) => [r.partnerId, Number(r.cnt)]));
+  return subs.map((s) => {
+    const p = pMap.get(s.partnerId);
+    return {
+      ...s,
+      partner: p ? { id: p.id, companyName: p.companyName, logoUrl: p.logoUrl, avgRating: p.avgRating, reviewCount: p.reviewCount } : null,
+      unreadCount: unreadMap.get(s.partnerId) ?? 0,
+    };
+  });
+}
+
+// 고객 견적 목록 + 제출건수 + 미읽음 채팅수 (마이페이지 카드용)
+export async function getQuotesByCustomerWithCounts(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const list = await db.select(quoteListColumns).from(quotes)
+    .where(eq(quotes.customerId, customerId)).orderBy(desc(quotes.createdAt));
+  if (list.length === 0) return [];
+  const quoteIds = list.map((q) => q.id);
+  const subRows = await db.select({ quoteId: quoteSubmissions.quoteId, cnt: sql<number>`count(*)` })
+    .from(quoteSubmissions).where(inArray(quoteSubmissions.quoteId, quoteIds))
+    .groupBy(quoteSubmissions.quoteId);
+  const subMap = new Map(subRows.map((r) => [r.quoteId, Number(r.cnt)]));
+  const unreadRows = await db.select({ quoteId: chatMessages.quoteId, cnt: sql<number>`count(*)` })
+    .from(chatMessages).where(and(
+      inArray(chatMessages.quoteId, quoteIds),
+      eq(chatMessages.senderRole, "partner"),
+      eq(chatMessages.isRead, false),
+    )).groupBy(chatMessages.quoteId);
+  const unreadMap = new Map(unreadRows.map((r) => [r.quoteId, Number(r.cnt)]));
+  return list.map((q) => ({
+    ...q,
+    submissionCount: subMap.get(q.id) ?? 0,
+    unreadCount: unreadMap.get(q.id) ?? 0,
+  }));
+}
+
+// 채팅 읽음 처리 — 읽는 사람(readerRole)이 상대가 보낸 메시지를 읽음으로
+export async function markChatRead(quoteId: number, partnerId: number, readerRole: "customer" | "partner") {
+  const db = await getDb();
+  if (!db) return;
+  const senderRole = readerRole === "customer" ? "partner" : "customer";
+  await db.update(chatMessages).set({ isRead: true }).where(and(
+    eq(chatMessages.quoteId, quoteId),
+    eq(chatMessages.partnerId, partnerId),
+    eq(chatMessages.senderRole, senderRole),
+    eq(chatMessages.isRead, false),
+  ));
 }
 
 // ===================== CHAT (채팅) =====================

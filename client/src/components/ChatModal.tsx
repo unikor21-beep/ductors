@@ -32,6 +32,19 @@ export default function ChatModal({ quoteId, partnerId, myRole, title, onClose }
     },
   });
 
+  // 채팅방 열림/새 메시지 시 읽음 처리 → 미읽음 배지 갱신
+  const markRead = trpc.chat.markRead.useMutation({
+    onSuccess: () => {
+      utils.quotes.myQuotes.invalidate();
+      utils.quotes.submissions.invalidate({ quoteId });
+      utils.chat.roomsByPartner.invalidate();
+    },
+  });
+  useEffect(() => {
+    markRead.mutate({ quoteId, partnerId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteId, partnerId, messages?.length]);
+
   // 새 메시지 오면 맨 아래로 스크롤
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
