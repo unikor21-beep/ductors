@@ -59,6 +59,16 @@ export const appRouter = router({
         return { available: !existing };
       }),
 
+    // 휴대전화 중복 확인
+    checkPhone: publicProcedure
+      .input(z.object({ phone: z.string() }))
+      .query(async ({ input }) => {
+        const digits = input.phone.replace(/\D/g, "");
+        if (digits.length < 10) return { available: true };
+        const existing = await db.getUserByPhoneDigits(digits);
+        return { available: !existing };
+      }),
+
     // 자체 회원가입 (아이디 + 비밀번호)
     signup: publicProcedure
       .input(z.object({
@@ -77,6 +87,11 @@ export const appRouter = router({
         const existing = await db.getUserByUsername(input.username);
         if (existing) {
           throw new TRPCError({ code: "CONFLICT", message: "이미 사용 중인 아이디입니다" });
+        }
+        // 휴대전화 중복 확인
+        const phoneDigits = input.phone.replace(/\D/g, "");
+        if (phoneDigits.length >= 10 && await db.getUserByPhoneDigits(phoneDigits)) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 가입된 전화번호입니다" });
         }
         // 비밀번호 + 보안답변 해싱
         const passwordHash = await hashPassword(input.password);

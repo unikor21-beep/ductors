@@ -73,8 +73,15 @@ export default function Signup() {
 
   const passwordMatch = form.password && form.password === form.passwordConfirm;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
+  const mobileValid = isValidMobile(form.mobile);
+  // 휴대전화 중복 확인 (형식이 맞을 때만)
+  const phoneCheck = trpc.auth.checkPhone.useQuery(
+    { phone: form.mobile },
+    { enabled: mobileValid, staleTime: 0 }
+  );
+  const phoneTaken = mobileValid && phoneCheck.data?.available === false;
   const formValid = usernameChecked === true && passwordMatch && form.password.length >= 8
-    && form.name && emailValid && isValidMobile(form.mobile) && form.securityAnswer;
+    && form.name && emailValid && mobileValid && !phoneTaken && form.securityAnswer;
 
   const handleSubmit = () => {
     if (!canAgree) { toast.error("필수 약관에 동의해주세요"); return; }
@@ -83,6 +90,7 @@ export default function Signup() {
     if (form.password.length < 8) { toast.error("비밀번호는 8자 이상이어야 합니다"); return; }
     if (!emailValid) { toast.error("올바른 이메일을 입력하세요"); return; }
     if (!isValidMobile(form.mobile)) { toast.error("휴대전화 번호를 정확히 입력하세요"); return; }
+    if (phoneTaken) { toast.error("이미 가입된 전화번호입니다"); return; }
     signup.mutate({
       username: form.username, password: form.password, name: form.name,
       email: form.email, phone: form.mobile,
@@ -234,6 +242,12 @@ export default function Signup() {
                   />
                   {form.mobile && !isValidMobile(form.mobile) && (
                     <p className="text-xs text-destructive mt-1">휴대전화 번호를 정확히 입력하세요 (예: 010-1234-5678)</p>
+                  )}
+                  {phoneTaken && (
+                    <p className="text-xs text-destructive mt-1">이미 가입된 전화번호입니다</p>
+                  )}
+                  {mobileValid && !phoneTaken && phoneCheck.data?.available === true && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><Check className="w-3 h-3" /> 사용 가능한 번호입니다</p>
                   )}
                 </div>
                 <div>

@@ -56,6 +56,18 @@ export async function getUserByUsername(username: string) {
   return r[0];
 }
 
+// 휴대전화 중복 확인 — 하이픈/공백 무시한 숫자 기준, 탈퇴(deletedAt) 계정 제외
+export async function getUserByPhoneDigits(digits: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select({ id: users.id }).from(users)
+    .where(and(
+      sql`REPLACE(REPLACE(${users.phone}, '-', ''), ' ', '') = ${digits}`,
+      isNull(users.deletedAt),
+    )).limit(1);
+  return r[0];
+}
+
 // 자체 회원가입 (아이디+비번)
 export async function createLocalUser(data: {
   username: string;
