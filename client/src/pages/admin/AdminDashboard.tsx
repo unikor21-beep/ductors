@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
 import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar, Eye } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
+import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, loginMethodLabel } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const BannerManager = lazy(() => import("./BannerManager"));
@@ -38,6 +38,7 @@ export default function AdminDashboard() {
 
   // 검색(필터)
   const [userSearch, setUserSearch] = useState("");
+  const [userRole, setUserRole] = useState<"all" | "user" | "partner" | "admin">("all");
   const [partnerSearch, setPartnerSearch] = useState("");
 
   // 파트너 상세 모달 + 카테고리(전문분야) 매핑
@@ -63,7 +64,8 @@ export default function AdminDashboard() {
   const norm = (v: any) => String(v ?? "").toLowerCase();
   const uq = userSearch.trim().toLowerCase();
   const filteredUsers = (allUsers || []).filter((u: any) =>
-    !uq || [u.name, u.username, u.email, u.phone, String(u.id)].some((f) => norm(f).includes(uq))
+    (userRole === "all" || u.role === userRole) &&
+    (!uq || [u.name, u.username, u.email, u.phone, String(u.id)].some((f) => norm(f).includes(uq)))
   );
   const pq = partnerSearch.trim().toLowerCase();
   const filteredPartners = (allPartners || []).filter((p: any) =>
@@ -153,14 +155,23 @@ export default function AdminDashboard() {
 
             {/* Users */}
             <TabsContent value="users" className="mt-4 space-y-3">
-              <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  placeholder="이름·아이디·이메일·전화번호 검색"
-                  className="pl-9"
-                />
+              <div className="flex flex-wrap items-center gap-2 justify-between">
+                <div className="flex gap-1.5">
+                  {([["all", "전체"], ["user", "고객"], ["partner", "파트너"], ["admin", "관리자"]] as const).map(([key, label]) => (
+                    <Button key={key} size="sm" variant={userRole === key ? "default" : "outline"} onClick={() => setUserRole(key)}>
+                      {label}{key !== "all" && ` (${(allUsers || []).filter((u: any) => u.role === key).length})`}
+                    </Button>
+                  ))}
+                </div>
+                <div className="relative w-full sm:w-auto sm:min-w-[280px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="이름·아이디·이메일·전화번호 검색"
+                    className="pl-9"
+                  />
+                </div>
               </div>
               <Card className="border-border/50 shadow-sm">
                 <CardContent className="p-0">
@@ -174,6 +185,7 @@ export default function AdminDashboard() {
                           <th className="text-left p-3 font-medium">이메일</th>
                           <th className="text-left p-3 font-medium">전화번호</th>
                           <th className="text-left p-3 font-medium">가입일</th>
+                          <th className="text-left p-3 font-medium">가입 방식</th>
                           <th className="text-left p-3 font-medium">역할</th>
                         </tr>
                       </thead>
@@ -186,11 +198,24 @@ export default function AdminDashboard() {
                             <td className="p-3 text-muted-foreground">{u.email || "-"}</td>
                             <td className="p-3 text-muted-foreground">{u.phone || "-"}</td>
                             <td className="p-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString("ko-KR")}</td>
-                            <td className="p-3"><Badge variant="secondary">{u.role}</Badge></td>
+                            <td className="p-3">
+                              <Badge variant="outline" className={u.loginMethod && u.loginMethod !== "local" ? "border-amber-300 text-amber-700" : ""}>
+                                {loginMethodLabel(u.loginMethod)}
+                              </Badge>
+                            </td>
+                            <td className="p-3">
+                              <span className={`text-[11px] font-medium px-2 py-0.5 rounded ${
+                                u.role === "admin" ? "bg-purple-100 text-purple-700" :
+                                u.role === "partner" ? "bg-primary/15 text-primary" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                {ROLE_LABELS[u.role] || u.role}
+                              </span>
+                            </td>
                           </tr>
                         ))}
                         {filteredUsers.length === 0 && (
-                          <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</td></tr>
+                          <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</td></tr>
                         )}
                       </tbody>
                     </table>

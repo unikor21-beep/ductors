@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ROLE_LABELS } from "@shared/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,7 +80,7 @@ export default function Header() {
                     user?.role === "partner" ? "bg-primary/15 text-primary" :
                     "bg-muted text-muted-foreground"
                   }`}>
-                    {user?.role === "admin" ? "관리자" : user?.role === "partner" ? "파트너" : "고객"}
+                    {ROLE_LABELS[user?.role || "user"] || "고객"}
                   </span>
                   <span className="text-sm">{user?.name || "사용자"}</span>
                   <ChevronDown className="w-3 h-3" />
@@ -157,7 +158,7 @@ export default function Header() {
                       user?.role === "partner" ? "bg-primary/15 text-primary" :
                       "bg-muted text-muted-foreground"
                     }`}>
-                      {user?.role === "admin" ? "관리자" : user?.role === "partner" ? "파트너" : "고객"}
+                      {ROLE_LABELS[user?.role || "user"] || "고객"}
                     </span>
                     <span className="text-sm font-medium">{user?.name || "사용자"}</span>
                   </div>

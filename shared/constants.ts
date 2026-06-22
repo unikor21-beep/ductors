@@ -79,3 +79,19 @@ export const BANNER_POSITION_CLASS: Record<string, string> = {
   bc: "bottom-4 left-1/2 -translate-x-1/2",
   br: "bottom-4 right-4",
 };
+
+// 역할 라벨 (헤더 뱃지·관리자 표 공용 — 용어 통일)
+export const ROLE_LABELS: Record<string, string> = {
+  user: "고객",
+  partner: "파트너",
+  admin: "관리자",
+};
+
+// 가입 방식 라벨 (loginMethod 기준)
+export const LOGIN_METHOD_LABELS: Record<string, string> = {
+  local: "일반",
+  kakao: "카카오",
+  naver: "네이버",
+  google: "구글",
+};
+export const loginMethodLabel = (m?: string | null) => m ? (LOGIN_METHOD_LABELS[m] || "SNS") : "-";
