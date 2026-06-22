@@ -1031,14 +1031,6 @@ export async function getPartnerJobStats(partnerId: number): Promise<{ completed
   return { completed, cancelled };
 }
 
-export async function getCompletedProjectCount(partnerId: number): Promise<number> {
-  const db = await getDb();
-  if (!db) return 0;
-  const [result] = await db.select({ count: sql<number>`count(*)` }).from(projectManagement)
-    .where(and(eq(projectManagement.partnerId, partnerId), eq(projectManagement.status, "completed")));
-  return result?.count || 0;
-}
-
 export function calculateGrade(completedCount: number, avgRating: number): "bronze" | "silver" | "gold" | "platinum" {
   for (const rule of GRADE_RULES) {
     if (completedCount >= rule.minCompleted && avgRating >= rule.minRating) {

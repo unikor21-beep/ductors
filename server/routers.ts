@@ -727,7 +727,7 @@ export const appRouter = router({
     // Partner grade progress (for partner dashboard)
     gradeProgress: partnerProcedure.query(async ({ ctx }) => {
       if (!ctx.partner) return null;
-      const completedCount = await db.getCompletedProjectCount(ctx.partner.id);
+      const { completed: completedCount } = await db.getPartnerJobStats(ctx.partner.id);
       const avgRating = parseFloat(String(ctx.partner.avgRating || "0"));
       const currentGrade = ctx.partner.grade || "bronze";
       const calculatedGrade = db.calculateGrade(completedCount, avgRating);
