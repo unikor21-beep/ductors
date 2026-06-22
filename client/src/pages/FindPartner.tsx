@@ -4,14 +4,16 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Search, Star, MapPin, Award, Building2, Loader2, Map as MapIcon, List, Navigation } from "lucide-react";
+import { Search, Star, MapPin, Award, Building2, Loader2, Map as MapIcon, List, Navigation, ChevronDown } from "lucide-react";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { GRADE_LABELS } from "@shared/constants";
 import PartnerAvatar from "@/components/PartnerAvatar";
-import RegionSelect, { SIDO_LIST } from "@/components/RegionSelect";
+import { SIDO_LIST } from "@/components/RegionSelect";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { MapView } from "@/components/Map";
 
@@ -23,7 +25,9 @@ const GRADE_COLORS: Record<string, string> = {
 };
 
 export default function FindPartner() {
-  const [searchRegion, setSearchRegion] = useState("");
+  const [searchRegions, setSearchRegions] = useState<string[]>([]);
+  const toggleRegion = (s: string) =>
+    setSearchRegions((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
   const [regionInitialized, setRegionInitialized] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("rating");
@@ -52,7 +56,7 @@ export default function FindPartner() {
   // 첫 로드 시 내 지역으로 자동 필터
   useEffect(() => {
     if (!regionInitialized && defaultRegion) {
-      setSearchRegion(defaultRegion);
+      setSearchRegions([defaultRegion]);
       setRegionInitialized(true);
     }
   }, [defaultRegion, regionInitialized]);
@@ -60,10 +64,10 @@ export default function FindPartner() {
   const filtered = useMemo(() => {
     if (!partners) return [];
     let result = [...partners];
-    if (searchRegion && searchRegion !== "all") {
+    if (searchRegions.length > 0) {
       result = result.filter((p) =>
         (p.regions as string[] || []).some((r) =>
-          r === searchRegion || r.startsWith(searchRegion + " ") || searchRegion.startsWith(r + " ") || searchRegion.startsWith(r)
+          searchRegions.some((sr) => r === sr || r.startsWith(sr + " ") || sr.startsWith(r + " ") || sr.startsWith(r))
         )
       );
     }
@@ -81,7 +85,7 @@ export default function FindPartner() {
     else if (sortBy === "reviews") result.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
     else if (sortBy === "recent") result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return result;
-  }, [partners, searchRegion, searchText, sortBy]);
+  }, [partners, searchRegions, searchText, sortBy]);
 
   // Partners that have coordinates for map display
   const mappablePartners = useMemo(() => {
@@ -287,25 +291,35 @@ export default function FindPartner() {
               />
             </div>
             <div className="flex gap-2 items-center">
-              <Button
-                variant={searchRegion ? "outline" : "ghost"}
-                size="sm"
-                className="text-xs h-9 px-3 shrink-0"
-                onClick={() => setSearchRegion("")}
-              >
-                전체
-              </Button>
-              <RegionSelect
-                value={searchRegion}
-                onChange={setSearchRegion}
-                label=""
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
+                    <MapPin className="w-3.5 h-3.5" />
+                    {searchRegions.length === 0 ? "시/도 전체" : `시/도 ${searchRegions.length}곳`}
+                    <ChevronDown className="w-3 h-3 opacity-60" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-2" align="end">
+                  <div className="flex items-center justify-between px-1 pb-1.5 mb-1 border-b">
+                    <span className="text-xs font-medium">시/도 <span className="text-muted-foreground font-normal">(여러 개 선택)</span></span>
+                    {searchRegions.length > 0 && <button className="text-xs text-primary hover:underline" onClick={() => setSearchRegions([])}>초기화</button>}
+                  </div>
+                  <div className="grid grid-cols-3 gap-0.5 max-h-64 overflow-y-auto">
+                    {SIDO_LIST.map((s) => (
+                      <label key={s} className="flex items-center gap-1.5 px-1.5 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                        <Checkbox checked={searchRegions.includes(s)} onCheckedChange={() => toggleRegion(s)} />
+                        {s}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">평점순</SelectItem>
-                <SelectItem value="reviews">리뷰순</SelectItem>
+                <SelectItem value="rating">리뷰 점수순</SelectItem>
+                <SelectItem value="reviews">리뷰 개수순</SelectItem>
                 <SelectItem value="recent">최신순</SelectItem>
               </SelectContent>
             </Select>
@@ -366,7 +380,7 @@ export default function FindPartner() {
               <p className="text-muted-foreground">검색 결과가 없습니다</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {filtered.map((partner) => (
                 <Link key={partner.id} href={`/partner/${partner.id}`}>
                   <Card className="border-border/50 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer h-full">

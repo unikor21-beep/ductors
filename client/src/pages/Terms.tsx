@@ -8,7 +8,7 @@ export default function Terms() {
       <main className="flex-1 pt-24 pb-16">
         <div className="container max-w-3xl">
           <h1 className="text-3xl font-bold text-foreground mb-2">서비스 이용약관</h1>
-          <p className="text-sm text-muted-foreground mb-8">시행일: 2025년 1월 1일</p>
+          <p className="text-sm text-muted-foreground mb-8">시행일: 2025년 1월 1일 (최종 개정: 2026년 6월 22일)</p>
 
           <div className="prose prose-sm max-w-none text-foreground/90 space-y-8">
             <section>
@@ -104,7 +104,7 @@ export default function Terms() {
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">제8조의2 (회원 탈퇴 및 이용계약의 해지)</h2>
               <div className="space-y-2 leading-relaxed">
-                <p>① 이용자는 언제든지 마이페이지를 통해 회원 탈퇴(이용계약 해지)를 신청할 수 있으며, 회사는 관련 법령이 정하는 경우를 제외하고 지체 없이 이를 처리합니다.</p>
+                <p>① 이용자는 언제든지 마이페이지(파트너 회원은 '파트너 정보 관리')를 통해 회원 탈퇴(이용계약 해지)를 신청할 수 있으며, 회사는 관련 법령이 정하는 경우를 제외하고 지체 없이 이를 처리합니다.</p>
                 <p>② 다음 각 호에 해당하는 경우 탈퇴 신청이 제한될 수 있습니다.</p>
                 <p className="pl-4">1. 진행 중인 견적 또는 거래가 있는 경우 (해당 거래 완료 후 탈퇴 가능)</p>
                 <p className="pl-4">2. 분쟁이 진행 중이거나 회사의 제재 조치가 진행 중인 경우</p>
@@ -178,7 +178,7 @@ export default function Terms() {
 
             <section className="bg-muted/50 rounded-xl p-6">
               <h2 className="text-lg font-semibold text-foreground mb-2">부칙</h2>
-              <p className="leading-relaxed text-sm">본 약관은 2025년 1월 1일부터 시행됩니다.</p>
+              <p className="leading-relaxed text-sm">본 약관은 2025년 1월 1일부터 시행되며, 2026년 6월 22일 개정되었습니다.</p>
             </section>
           </div>
         </div>
