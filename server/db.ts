@@ -1334,30 +1334,36 @@ export async function deleteSignupBonusCampaign(id: number) {
 // 현재 활성 캠페인 찾기 (파트너 승인 시 자동 호출)
 // 지금 시각이 캠페인 기간 내이고 활성화된 캠페인
 export async function applySignupBonusIfEligible(partnerId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const now = new Date();
-  const campaigns = await db.select().from(signupBonusCampaigns)
-    .where(and(
-      eq(signupBonusCampaigns.isActive, true),
-      sql`${signupBonusCampaigns.startsAt} <= ${now}`,
-      sql`${signupBonusCampaigns.endsAt} >= ${now}`
-    ))
-    .orderBy(desc(signupBonusCampaigns.bonusAmount)) // 여러 개면 가장 큰 혜택
-    .limit(1);
+  try {
+    const db = await getDb();
+    if (!db) return null;
+    const now = new Date();
+    const campaigns = await db.select().from(signupBonusCampaigns)
+      .where(and(
+        eq(signupBonusCampaigns.isActive, true),
+        sql`${signupBonusCampaigns.startsAt} <= ${now}`,
+        sql`${signupBonusCampaigns.endsAt} >= ${now}`
+      ))
+      .orderBy(desc(signupBonusCampaigns.bonusAmount)) // 여러 개면 가장 큰 혜택
+      .limit(1);
 
-  if (campaigns.length === 0) return null;
-  const campaign = campaigns[0];
+    if (campaigns.length === 0) return null;
+    const campaign = campaigns[0];
 
-  // 포인트 지급
-  await grantPoint(partnerId, campaign.bonusAmount, campaign.validDays, `${campaign.name} (신규가입 보너스)`);
+    // 포인트 지급
+    await grantPoint(partnerId, campaign.bonusAmount, campaign.validDays, `${campaign.name} (신규가입 보너스)`);
 
-  // 지급 카운트 증가
-  await db.update(signupBonusCampaigns)
-    .set({ grantedCount: campaign.grantedCount + 1 })
-    .where(eq(signupBonusCampaigns.id, campaign.id));
+    // 지급 카운트 증가
+    await db.update(signupBonusCampaigns)
+      .set({ grantedCount: campaign.grantedCount + 1 })
+      .where(eq(signupBonusCampaigns.id, campaign.id));
 
-  return { name: campaign.name, amount: campaign.bonusAmount };
+    return { name: campaign.name, amount: campaign.bonusAmount };
+  } catch (e: any) {
+    // 캠페인 테이블 미설치 등으로 실패해도 승인 자체는 정상 진행
+    console.error("[신규가입보너스] 적용 실패(무시):", e?.code || e?.sqlMessage || e?.message);
+    return null;
+  }
 }
 
 // 일괄 포인트 지급 (여러 파트너에게 한 번에)
