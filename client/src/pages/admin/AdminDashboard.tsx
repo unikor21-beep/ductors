@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
-import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search } from "lucide-react";
+import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar, Eye } from "lucide-react";
 import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
@@ -38,6 +39,27 @@ export default function AdminDashboard() {
   // 검색(필터)
   const [userSearch, setUserSearch] = useState("");
   const [partnerSearch, setPartnerSearch] = useState("");
+
+  // 파트너 상세 모달 + 카테고리(전문분야) 매핑
+  const [detailPartner, setDetailPartner] = useState<any | null>(null);
+  const { data: allCategories } = trpc.categories.list.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" });
+  const categoryName = (id: any) => (allCategories || []).find((c: any) => String(c.id) === String(id))?.name || String(id);
+
+  // 사업자등록증(data URL)을 Blob으로 변환해 새 창에서 열기 (브라우저의 data: 직접 이동 차단 우회)
+  const openCert = (dataUrl: string) => {
+    try {
+      const [meta, b64] = dataUrl.split(",");
+      const mime = meta.match(/data:(.*?);/)?.[1] || "application/octet-stream";
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([arr], { type: mime }));
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast.error("파일을 열 수 없습니다");
+    }
+  };
   const norm = (v: any) => String(v ?? "").toLowerCase();
   const uq = userSearch.trim().toLowerCase();
   const filteredUsers = (allUsers || []).filter((u: any) =>
@@ -198,24 +220,20 @@ export default function AdminDashboard() {
                       <div className="min-w-0">
                         <h3 className="font-semibold text-foreground">{p.companyName}</h3>
                         <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
-                        {/* 사업자등록증 */}
-                        {(p as any).businessLicenseUrl ? (
-                          <a
-                            href={(p as any).businessLicenseUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 mt-1.5 text-xs text-primary hover:underline"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            사업자등록증 확인
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 mt-1.5 text-xs text-amber-500">
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            사업자등록증 미첨부
-                          </span>
-                        )}
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <button onClick={() => setDetailPartner(p)} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                            <Eye className="w-3.5 h-3.5" /> 신청 정보 보기
+                          </button>
+                          {p.businessLicenseUrl ? (
+                            <button onClick={() => openCert(p.businessLicenseUrl)} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                              <FileText className="w-3.5 h-3.5" /> 사업자등록증 <ExternalLink className="w-3 h-3" />
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-500">
+                              <AlertCircle className="w-3.5 h-3.5" /> 사업자등록증 미첨부
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <Badge variant={p.status === "approved" ? "default" : "secondary"}>
                         {PARTNER_STATUS_LABELS[p.status] || p.status}
@@ -382,6 +400,72 @@ export default function AdminDashboard() {
           </Tabs>
         </div>
       </main>
+
+      {/* 파트너 신청 정보 상세 모달 */}
+      <Dialog open={!!detailPartner} onOpenChange={(o) => !o && setDetailPartner(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>파트너 신청 정보</DialogTitle>
+          </DialogHeader>
+          {detailPartner && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="flex items-start gap-2"><Building2 className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">업체명</span><span className="font-medium">{detailPartner.companyName || "-"}</span></div>
+                <div className="flex items-start gap-2"><Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">사업자번호</span><span className="font-medium">{detailPartner.businessNumber || "-"}</span></div>
+                <div className="flex items-start gap-2"><Users className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">대표자명</span><span className="font-medium">{detailPartner.representativeName || "-"}</span></div>
+                <div className="flex items-start gap-2"><Phone className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">연락처</span><span className="font-medium">{detailPartner.phone || "-"}</span></div>
+                <div className="flex items-start gap-2"><Mail className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">이메일</span><span className="font-medium break-all">{detailPartner.email || "-"}</span></div>
+                <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">주소</span><span className="font-medium">{detailPartner.address || "-"}</span></div>
+                <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><span className="text-muted-foreground w-20 shrink-0">신청일</span><span className="font-medium">{detailPartner.createdAt ? new Date(detailPartner.createdAt).toLocaleString("ko-KR") : "-"}</span></div>
+              </div>
+
+              {detailPartner.shortIntro && (
+                <div className="text-sm"><span className="text-muted-foreground">한줄 소개</span><p className="mt-1">{detailPartner.shortIntro}</p></div>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs text-muted-foreground w-full">전문 분야</span>
+                {(detailPartner.specialties || []).length ? (detailPartner.specialties || []).map((s: any) => (
+                  <Badge key={s} variant="secondary">{categoryName(s)}</Badge>
+                )) : <span className="text-sm">-</span>}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs text-muted-foreground w-full">가능 지역</span>
+                {(detailPartner.regions || []).length ? (detailPartner.regions || []).map((r: any) => (
+                  <Badge key={r} variant="outline">{r}</Badge>
+                )) : <span className="text-sm">-</span>}
+              </div>
+
+              {/* 사업자등록증 */}
+              <div className="border-t border-border/50 pt-3">
+                <p className="text-sm font-medium mb-2">사업자등록증</p>
+                {detailPartner.businessLicenseUrl ? (
+                  String(detailPartner.businessLicenseUrl).startsWith("data:image") ? (
+                    <div className="space-y-2">
+                      <img src={detailPartner.businessLicenseUrl} alt="사업자등록증" className="max-w-full rounded-lg border" />
+                      <Button size="sm" variant="outline" onClick={() => openCert(detailPartner.businessLicenseUrl)}>
+                        <ExternalLink className="w-4 h-4 mr-1" /> 새 창에서 크게 보기
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" onClick={() => openCert(detailPartner.businessLicenseUrl)}>
+                      <FileText className="w-4 h-4 mr-1" /> 사업자등록증 열기 (PDF)
+                    </Button>
+                  )
+                ) : (
+                  <p className="text-sm text-amber-500 flex items-center gap-1"><AlertCircle className="w-4 h-4" /> 미첨부</p>
+                )}
+              </div>
+
+              {/* 승인 처리 */}
+              <div className="flex gap-2 border-t border-border/50 pt-3">
+                <Button className="flex-1" onClick={() => { updatePartnerStatus.mutate({ id: detailPartner.id, status: "approved" }); setDetailPartner(null); }}>승인</Button>
+                <Button variant="outline" className="flex-1" onClick={() => { updatePartnerStatus.mutate({ id: detailPartner.id, status: "rejected" }); setDetailPartner(null); }}>거부</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
