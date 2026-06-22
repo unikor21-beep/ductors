@@ -72,6 +72,7 @@ export default function Login() {
                 <Label className="text-sm font-medium mb-1.5 block">아이디</Label>
                 <Input
                   placeholder="아이디"
+                  autoComplete="off"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -87,6 +88,7 @@ export default function Login() {
                 <Input
                   type="password"
                   placeholder="비밀번호"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}

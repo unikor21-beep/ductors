@@ -133,7 +133,31 @@ export default function Signup() {
               <p className="text-muted-foreground text-sm mb-6">SNS로 빠르게, 또는 아이디로 가입하세요</p>
 
               <div className="space-y-4">
-                {/* SNS 가입 (먼저) */}
+                {/* 약관 동의 (먼저 — SNS·아이디 가입 모두 동의 필요) */}
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-2.5">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <Checkbox id="agree-all" checked={agreeAll} onCheckedChange={(c) => handleAgreeAll(c === true)} />
+                    <label htmlFor="agree-all" className="text-sm font-semibold cursor-pointer">전체 동의</label>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Checkbox id="agree-terms" checked={agreeTerms} onCheckedChange={(c) => setAgreeTerms(c === true)} />
+                    <label htmlFor="agree-terms" className="text-sm cursor-pointer flex-1"><span className="text-red-500 font-medium">[필수]</span> 서비스 이용약관 동의</label>
+                    <Link href="/terms" className="text-xs text-primary hover:underline">보기</Link>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Checkbox id="agree-privacy" checked={agreePrivacy} onCheckedChange={(c) => setAgreePrivacy(c === true)} />
+                    <label htmlFor="agree-privacy" className="text-sm cursor-pointer flex-1"><span className="text-red-500 font-medium">[필수]</span> 개인정보 수집·이용 동의</label>
+                    <Link href="/privacy" className="text-xs text-primary hover:underline">보기</Link>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Checkbox id="agree-marketing" checked={agreeMarketing} onCheckedChange={(c) => setAgreeMarketing(c === true)} />
+                    <label htmlFor="agree-marketing" className="text-sm cursor-pointer flex-1"><span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의</label>
+                    <Link href="/marketing" className="text-xs text-primary hover:underline">보기</Link>
+                  </div>
+                  {!canAgree && <p className="text-xs text-red-500 pt-0.5">필수 약관에 동의하면 가입을 진행할 수 있습니다</p>}
+                </div>
+
+                {/* SNS 가입 */}
                 <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("hover:opacity-90")} style={{ backgroundColor: "#FEE500", color: "#191919" }}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3C5.58 3 2 5.79 2 9.21c0 2.17 1.45 4.08 3.64 5.18l-.93 3.41c-.08.3.26.54.52.37l4.07-2.68c.23.02.46.03.7.03 4.42 0 8-2.79 8-6.21S14.42 3 10 3z" fill="#191919"/></svg>
                   카카오로 가입
@@ -163,6 +187,7 @@ export default function Signup() {
                   <div className="flex gap-2">
                     <Input
                       placeholder="영문/숫자 4~20자"
+                      autoComplete="off"
                       value={form.username}
                       onChange={(e) => { setForm({ ...form, username: e.target.value }); setUsernameChecked(null); }}
                     />
@@ -176,11 +201,11 @@ export default function Signup() {
 
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">비밀번호 *</Label>
-                  <Input type="password" placeholder="8자 이상" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  <Input type="password" placeholder="8자 이상" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">비밀번호 확인 *</Label>
-                  <Input type="password" placeholder="비밀번호 재입력" value={form.passwordConfirm} onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })} />
+                  <Input type="password" placeholder="비밀번호 재입력" autoComplete="new-password" value={form.passwordConfirm} onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })} />
                   {form.passwordConfirm && !passwordMatch && <p className="text-xs text-destructive mt-1">비밀번호가 일치하지 않습니다</p>}
                   {passwordMatch && <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><Check className="w-3 h-3" /> 일치</p>}
                 </div>
@@ -235,29 +260,6 @@ export default function Signup() {
                   <Input className="mt-2" placeholder="답변 입력" value={form.securityAnswer} onChange={(e) => setForm({ ...form, securityAnswer: e.target.value })} />
                 </div>
 
-                {/* 약관 동의 */}
-                <div className="pt-2 border-t border-border/40 space-y-2.5">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
-                    <Checkbox id="agree-all" checked={agreeAll} onCheckedChange={(c) => handleAgreeAll(c === true)} />
-                    <label htmlFor="agree-all" className="text-sm font-semibold cursor-pointer">전체 동의</label>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Checkbox id="agree-terms" checked={agreeTerms} onCheckedChange={(c) => setAgreeTerms(c === true)} />
-                    <label htmlFor="agree-terms" className="text-sm cursor-pointer flex-1"><span className="text-red-500 font-medium">[필수]</span> 서비스 이용약관 동의</label>
-                    <Link href="/terms" className="text-xs text-primary hover:underline">보기</Link>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Checkbox id="agree-privacy" checked={agreePrivacy} onCheckedChange={(c) => setAgreePrivacy(c === true)} />
-                    <label htmlFor="agree-privacy" className="text-sm cursor-pointer flex-1"><span className="text-red-500 font-medium">[필수]</span> 개인정보 수집·이용 동의</label>
-                    <Link href="/privacy" className="text-xs text-primary hover:underline">보기</Link>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Checkbox id="agree-marketing" checked={agreeMarketing} onCheckedChange={(c) => setAgreeMarketing(c === true)} />
-                    <label htmlFor="agree-marketing" className="text-sm cursor-pointer flex-1"><span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의</label>
-                    <Link href="/marketing" className="text-xs text-primary hover:underline">보기</Link>
-                  </div>
-                </div>
-
                 {/* 가입 버튼 (밝은 그린) */}
                 <Button
                   className="w-full h-12 rounded-xl gap-2"
@@ -267,7 +269,6 @@ export default function Signup() {
                   {signup.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   회원가입
                 </Button>
-                {!canAgree && <p className="text-xs text-red-500 text-center">필수 약관에 동의해야 가입을 진행할 수 있습니다</p>}
 
                 <p className="text-center text-sm text-muted-foreground pt-2">
                   이미 계정이 있으신가요?{" "}
