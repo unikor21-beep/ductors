@@ -84,7 +84,7 @@ export default function QuoteRequest() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      window.location.href = "/login-local?reason=quote";
+      window.location.href = "/login?reason=quote";
     }
   }, [loading, isAuthenticated]);
 
