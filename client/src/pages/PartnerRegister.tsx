@@ -69,7 +69,7 @@ export default function PartnerRegister() {
       setSubmitted(true);
       toast.success("파트너 가입 신청이 완료되었습니다!");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(!e.message || e.message.length > 150 ? "신청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." : e.message),
   });
 
   useEffect(() => {

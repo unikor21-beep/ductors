@@ -174,13 +174,29 @@ export async function getPartnerById(id: number) {
   return r[0] || null;
 }
 
+// 목록 조회용 컬럼 (businessLicenseUrl 제외 — 관리자 검토 전용이라 목록엔 불필요하고 용량이 큼)
+const partnerListColumns = {
+  id: partners.id, userId: partners.userId, companyName: partners.companyName,
+  businessNumber: partners.businessNumber, representativeName: partners.representativeName,
+  phone: partners.phone, email: partners.email, logoUrl: partners.logoUrl,
+  shortIntro: partners.shortIntro, description: partners.description,
+  regions: partners.regions, specialties: partners.specialties, status: partners.status,
+  avgRating: partners.avgRating, reviewCount: partners.reviewCount, grade: partners.grade,
+  responseRate: partners.responseRate, viewCredits: partners.viewCredits,
+  tokenBalance: partners.tokenBalance, pointBalance: partners.pointBalance,
+  subscriptionType: partners.subscriptionType, subscriptionExpiry: partners.subscriptionExpiry,
+  designCredits: partners.designCredits, address: partners.address,
+  latitude: partners.latitude, longitude: partners.longitude,
+  createdAt: partners.createdAt, updatedAt: partners.updatedAt,
+};
+
 export async function getApprovedPartners(region?: string) {
   const db = await getDb();
   if (!db) return [];
   // 정렬: ① 평점 높은순 (단, 리뷰 0건 신규 파트너는 3.0 기본점으로 취급)
   //       ② 평점 같으면 리뷰 많은순
   const sortRating = sql`CASE WHEN ${partners.reviewCount} = 0 OR ${partners.reviewCount} IS NULL THEN 3.0 ELSE ${partners.avgRating} END`;
-  return db.select().from(partners)
+  return db.select(partnerListColumns).from(partners)
     .where(eq(partners.status, "approved"))
     .orderBy(desc(sortRating), desc(partners.reviewCount));
 }
@@ -188,6 +204,7 @@ export async function getApprovedPartners(region?: string) {
 export async function getAllPartners() {
   const db = await getDb();
   if (!db) return [];
+  // 관리자 검토용으로 businessLicenseUrl 포함 (관리자 전용·건수 제한적)
   return db.select().from(partners).orderBy(desc(partners.createdAt));
 }
 
@@ -478,7 +495,7 @@ export async function getSubmissionsByQuote(quoteId: number) {
   if (subs.length === 0) return [];
   // 파트너 정보
   const partnerIds = subs.map((s) => s.partnerId).filter((v, i, a) => a.indexOf(v) === i);
-  const ps = await db.select().from(partners).where(inArray(partners.id, partnerIds));
+  const ps = await db.select(partnerListColumns).from(partners).where(inArray(partners.id, partnerIds));
   const pMap = new Map(ps.map((p) => [p.id, p]));
   // 파트너별 미읽음(파트너→고객) 메시지 수
   const unreadRows = await db.select({

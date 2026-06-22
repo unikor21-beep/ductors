@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, decimal, bigint } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, decimal, bigint, longtext } from "drizzle-orm/mysql-core";
 
 // ============================================================
 // 1. USERS (확장)
@@ -38,7 +38,7 @@ export const partners = mysqlTable("partners", {
   representativeName: varchar("representativeName", { length: 100 }),
   phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 320 }),
-  logoUrl: text("logoUrl"),
+  logoUrl: longtext("logoUrl"),
   shortIntro: varchar("shortIntro", { length: 500 }),
   description: text("description"),
   regions: json("regions").$type<string[]>(),
@@ -54,7 +54,7 @@ export const partners = mysqlTable("partners", {
   subscriptionType: mysqlEnum("subscriptionType", ["none", "monthly_view", "monthly_design"]).default("none"),
   subscriptionExpiry: timestamp("subscriptionExpiry"),
   designCredits: int("designCredits").default(0),
-  businessLicenseUrl: text("businessLicenseUrl"),
+  businessLicenseUrl: longtext("businessLicenseUrl"),
   address: text("address"),
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
