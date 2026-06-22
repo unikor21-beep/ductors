@@ -7,7 +7,7 @@
 
 ## 📌 2026-06-22 세션 작업 요약
 
-> 오늘 작업 전부 main에 푸시됨(최신 커밋 `1531d04`). 타입 에러 0 유지.
+> 오늘 작업 전부 main에 푸시됨(최신 커밋 `6705f34`). 타입 에러 0 유지. 프로덕션 빌드 정상.
 
 ### 가입 / 계정 / 보안
 - **비밀번호 정책** (`shared/password.ts`): 영문+숫자+특수문자 3종 8~20자, 같은 문자 3연속·연속 문자/숫자 금지. 가입·재설정·변경 화면 실시간 체크리스트 + 서버 검증.
@@ -178,6 +178,10 @@ NTS_API_KEY="..."   (국세청 사업자번호 인증 API)
 | DB 스키마 변경 시 | 해당 setup 스크립트 실행 필요 (아래 참고) |
 | 명령어를 .env/서버창에 잘못 입력 | 명령어는 **새 터미널**에서 (서버 창은 서버 전용) |
 | 서버 로그 빨간 메시지 (VITE_ANALYTICS 등) | 무관, 무시 |
+| **명령어 두 줄이 한 줄로 붙음** (예: `installpnpm`) | 코드블록은 **한 줄씩** 복사·실행. 붙으면 없는 명령이 됨 |
+| `'cross-env'/'NODE_ENV' 은(는) ... 아닙니다` | 2026-06-22 `package.json` 정리로 해결됨(cross-env 정식 포함, dev/start 스크립트 cross-env 전환). 재발 시 `pnpm add -D cross-env` |
+| `git pull` 시 `local changes ... package.json` | 로컬에서 패키지 추가/삭제하면 충돌. `git checkout -- package.json pnpm-lock.yaml` 후 다시 pull |
+| 새 라이브러리 추가된 커밋 받은 뒤 | pull 후 `pnpm install` 한 번 (예: xlsx 추가 시) |
 
 ---
 
