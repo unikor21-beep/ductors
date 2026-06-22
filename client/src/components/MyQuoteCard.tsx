@@ -220,7 +220,7 @@ export default function MyQuoteCard({ q }: { q: any }) {
                         )}
                         {isSelected && (status === "matched" || status === "in_progress") && (
                           <Button className="w-full mt-3" size="sm"
-                            onClick={() => setConfirm({ title: "시공이 완료되었나요?", desc: "완료 처리 후 리뷰를 작성할 수 있습니다. 되돌릴 수 없습니다.", okLabel: "시공 완료", onOk: () => completeWork.mutate({ quoteId: q.id }) })}>
+                            onClick={() => setConfirm({ title: "시공이 완료되었나요?", desc: "완료 처리 후 바로 리뷰를 작성합니다. 되돌릴 수 없습니다.", okLabel: "시공 완료", onOk: () => completeWork.mutate({ quoteId: q.id }, { onSuccess: () => setReviewWith({ partnerId: s.partnerId, name: s.partner?.companyName || "파트너" }) }) })}>
                             시공 완료
                           </Button>
                         )}
