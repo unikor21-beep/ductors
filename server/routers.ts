@@ -389,7 +389,7 @@ export const appRouter = router({
       if (quote.status !== "matched" && quote.status !== "in_progress") throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후 시공 완료 처리할 수 있습니다" });
       await db.updateQuoteStatus(input.quoteId, "completed");
       const selectedPartnerId = await db.getSelectedPartnerId(input.quoteId);
-      if (selectedPartnerId) await db.sendChatMessage({ quoteId: input.quoteId, partnerId: selectedPartnerId, senderRole: "customer", senderId: ctx.user.id, message: "[시공 완료] 고객님이 시공 완료 처리했습니다. 이용해 주셔서 감사합니다." });
+      if (selectedPartnerId) await db.sendChatMessage({ quoteId: input.quoteId, partnerId: selectedPartnerId, senderRole: "customer", senderId: ctx.user.id, message: "[시공 완료] 고객님이 시공 완료 처리했습니다. 수고하셨습니다." });
       return { success: true };
     }),
     // Admin
@@ -735,6 +735,11 @@ export const appRouter = router({
       const existing = await db.getReviewByQuote(input.quoteId, ctx.user.id);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "이미 리뷰를 작성했습니다" });
       const id = await db.createReview({ ...input, customerId: ctx.user.id });
+      // 파트너에게 별점+후기 내용 알림
+      const stars = "★".repeat(input.rating) + "☆".repeat(5 - input.rating);
+      const reviewMsg = `[리뷰 등록] 고객님이 후기를 남겼습니다.\n별점: ${stars} (${input.rating}/5)`
+        + (input.content && input.content.trim() ? `\n"${input.content.trim()}"` : "");
+      await db.sendChatMessage({ quoteId: input.quoteId, partnerId: input.partnerId, senderRole: "customer", senderId: ctx.user.id, message: reviewMsg });
       // Auto-evaluate partner grade after new review
       const gradeResult = await db.evaluateAndUpdatePartnerGrade(input.partnerId);
       return { id, gradeChanged: gradeResult.changed, newGrade: gradeResult.newGrade };
