@@ -95,3 +95,11 @@ export const LOGIN_METHOD_LABELS: Record<string, string> = {
   google: "구글",
 };
 export const loginMethodLabel = (m?: string | null) => m ? (LOGIN_METHOD_LABELS[m] || "SNS") : "-";
+
+// 역할 뱃지 스타일 (헤더·관리자표 공용 — 색 통일)
+// 고객=진한 초록(primary), 파트너=로고 라임(#84cc16), 관리자=보라
+export const ROLE_BADGE_STYLE: Record<string, { className: string; bg?: string; color?: string }> = {
+  user: { className: "bg-primary/15 text-primary" },
+  partner: { className: "", bg: "#84cc16", color: "#ffffff" },
+  admin: { className: "bg-purple-100 text-purple-700" },
+};

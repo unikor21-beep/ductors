@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
 import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar, Eye } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, loginMethodLabel } from "@shared/constants";
+import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const BannerManager = lazy(() => import("./BannerManager"));
@@ -204,11 +204,8 @@ export default function AdminDashboard() {
                               </Badge>
                             </td>
                             <td className="p-3">
-                              <span className={`text-[11px] font-medium px-2 py-0.5 rounded ${
-                                u.role === "admin" ? "bg-purple-100 text-purple-700" :
-                                u.role === "partner" ? "bg-primary/15 text-primary" :
-                                "bg-muted text-muted-foreground"
-                              }`}>
+                              <span className={`text-[11px] font-medium px-2 py-0.5 rounded ${ROLE_BADGE_STYLE[u.role]?.className || ""}`}
+                                style={{ backgroundColor: ROLE_BADGE_STYLE[u.role]?.bg, color: ROLE_BADGE_STYLE[u.role]?.color }}>
                                 {ROLE_LABELS[u.role] || u.role}
                               </span>
                             </td>

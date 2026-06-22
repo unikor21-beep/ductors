@@ -5,7 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ROLE_LABELS } from "@shared/constants";
+import { ROLE_LABELS, ROLE_BADGE_STYLE } from "@shared/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,11 +75,8 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="w-4 h-4" />
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                    user?.role === "admin" ? "bg-purple-100 text-purple-700" :
-                    user?.role === "partner" ? "bg-primary/15 text-primary" :
-                    "bg-muted text-muted-foreground"
-                  }`}>
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${ROLE_BADGE_STYLE[user?.role || "user"]?.className || ""}`}
+                    style={{ backgroundColor: ROLE_BADGE_STYLE[user?.role || "user"]?.bg, color: ROLE_BADGE_STYLE[user?.role || "user"]?.color }}>
                     {ROLE_LABELS[user?.role || "user"] || "고객"}
                   </span>
                   <span className="text-sm">{user?.name || "사용자"}</span>
@@ -153,11 +150,8 @@ export default function Header() {
               {isAuthenticated ? (
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 py-2">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                      user?.role === "admin" ? "bg-purple-100 text-purple-700" :
-                      user?.role === "partner" ? "bg-primary/15 text-primary" :
-                      "bg-muted text-muted-foreground"
-                    }`}>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${ROLE_BADGE_STYLE[user?.role || "user"]?.className || ""}`}
+                      style={{ backgroundColor: ROLE_BADGE_STYLE[user?.role || "user"]?.bg, color: ROLE_BADGE_STYLE[user?.role || "user"]?.color }}>
                       {ROLE_LABELS[user?.role || "user"] || "고객"}
                     </span>
                     <span className="text-sm font-medium">{user?.name || "사용자"}</span>
