@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
 import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar, Eye } from "lucide-react";
-import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel } from "@shared/constants";
+import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel, REGIONS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
 const BannerManager = lazy(() => import("./BannerManager"));
@@ -40,6 +40,13 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState("");
   const [userRole, setUserRole] = useState<"all" | "user" | "partner" | "admin">("all");
   const [partnerSearch, setPartnerSearch] = useState("");
+  // 파트너 다중 선택 필터 (지역·등급·승인상태)
+  const [pStatuses, setPStatuses] = useState<string[]>([]);
+  const [pGrades, setPGrades] = useState<string[]>([]);
+  const [pRegions, setPRegions] = useState<string[]>([]);
+  const toggleIn = (arr: string[], set: (v: string[]) => void, v: string) =>
+    set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  const partnerFiltersActive = pStatuses.length + pGrades.length + pRegions.length > 0;
 
   // 파트너 상세 모달 + 카테고리(전문분야) 매핑
   const [detailPartner, setDetailPartner] = useState<any | null>(null);
@@ -69,7 +76,10 @@ export default function AdminDashboard() {
   );
   const pq = partnerSearch.trim().toLowerCase();
   const filteredPartners = (allPartners || []).filter((p: any) =>
-    !pq || [p.companyName, p.representativeName, p.phone, p.email, p.businessNumber, String(p.id)].some((f) => norm(f).includes(pq))
+    (pStatuses.length === 0 || pStatuses.includes(p.status)) &&
+    (pGrades.length === 0 || pGrades.includes(p.grade || "bronze")) &&
+    (pRegions.length === 0 || (Array.isArray(p.regions) && p.regions.some((r: string) => pRegions.includes(r)))) &&
+    (!pq || [p.companyName, p.representativeName, p.phone, p.email, p.businessNumber, String(p.id)].some((f) => norm(f).includes(pq)))
   );
 
   const updatePartnerStatus = trpc.partners.updateStatus.useMutation({
@@ -232,6 +242,53 @@ export default function AdminDashboard() {
                   className="pl-9"
                 />
               </div>
+
+              {/* 다중 선택 필터 */}
+              <Card className="border-border/50 shadow-sm">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">필터 <span className="text-muted-foreground font-normal">(여러 개 선택 가능)</span></span>
+                    {partnerFiltersActive && (
+                      <button onClick={() => { setPStatuses([]); setPGrades([]); setPRegions([]); }} className="text-xs text-primary hover:underline">필터 초기화</button>
+                    )}
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs text-muted-foreground w-16 shrink-0 pt-1.5">승인상태</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(PARTNER_STATUS_LABELS).map(([k, label]) => (
+                        <button key={k} onClick={() => toggleIn(pStatuses, setPStatuses, k)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${pStatuses.includes(k) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs text-muted-foreground w-16 shrink-0 pt-1.5">등급</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(GRADE_LABELS).map(([k, label]) => (
+                        <button key={k} onClick={() => toggleIn(pGrades, setPGrades, k)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1 ${pGrades.includes(k) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: GRADE_COLORS[k] }} />{label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs text-muted-foreground w-16 shrink-0 pt-1.5">지역</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {REGIONS.map((r) => (
+                        <button key={r} onClick={() => toggleIn(pRegions, setPRegions, r)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${pRegions.includes(r) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">{filteredPartners.length}개 파트너</p>
+                </CardContent>
+              </Card>
+
               {filteredPartners.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</div>
               )}
