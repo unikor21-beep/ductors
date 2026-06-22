@@ -333,9 +333,39 @@ export const appRouter = router({
       await db.updateQuoteStatus(input.id, input.status);
       return { success: true };
     }),
-    selectSubmission: protectedProcedure.input(z.object({ submissionId: z.number(), quoteId: z.number() })).mutation(async ({ input }) => {
+    // 고객: 파트너 선정 (나머지 자동 탈락 → 매칭)
+    selectSubmission: protectedProcedure.input(z.object({ submissionId: z.number(), quoteId: z.number() })).mutation(async ({ ctx, input }) => {
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+      const sub = await db.getSubmissionById(input.submissionId);
+      if (!sub || sub.quoteId !== input.quoteId) throw new TRPCError({ code: "NOT_FOUND", message: "견적 제출을 찾을 수 없습니다" });
       await db.updateSubmissionStatus(input.submissionId, "selected");
+      await db.rejectOtherSubmissions(input.quoteId, input.submissionId);
       await db.updateQuoteStatus(input.quoteId, "matched");
+      return { success: true };
+    }),
+    // 고객: 아무와도 진행 안 함 (종결)
+    closeWithoutPartner: protectedProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+      await db.rejectAllSubmissions(input.quoteId);
+      await db.updateQuoteStatus(input.quoteId, "cancelled");
+      return { success: true };
+    }),
+    // 고객: 시공 시작 (매칭 → 시공중)
+    startWork: protectedProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+      if (quote.status !== "matched") throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후에 시공을 시작할 수 있습니다" });
+      await db.updateQuoteStatus(input.quoteId, "in_progress");
+      return { success: true };
+    }),
+    // 고객: 시공 완료 (시공중 → 완료)
+    completeWork: protectedProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+      if (quote.status !== "in_progress") throw new TRPCError({ code: "BAD_REQUEST", message: "시공 중일 때 완료 처리할 수 있습니다" });
+      await db.updateQuoteStatus(input.quoteId, "completed");
       return { success: true };
     }),
     // Admin
@@ -616,6 +646,12 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "채팅 권한이 없습니다" });
         }
 
+        // 파트너 선정 후에는 선정된 파트너와만 채팅 유지
+        const selectedPartnerId = await db.getSelectedPartnerId(input.quoteId);
+        if (selectedPartnerId && input.partnerId !== selectedPartnerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "선정된 파트너와만 채팅할 수 있습니다" });
+        }
+
         await db.sendChatMessage({ quoteId: input.quoteId, partnerId: input.partnerId, senderRole, senderId, message: input.message });
         return { success: true };
       }),
@@ -667,11 +703,20 @@ export const appRouter = router({
   // ===================== REVIEWS =====================
   reviews: router({
     create: protectedProcedure.input(z.object({ quoteId: z.number(), partnerId: z.number(), rating: z.number().min(1).max(5), content: z.string().optional() })).mutation(async ({ ctx, input }) => {
+      const quote = await db.getQuoteById(input.quoteId);
+      if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+      if (quote.status !== "completed") throw new TRPCError({ code: "BAD_REQUEST", message: "시공 완료 후 리뷰를 작성할 수 있습니다" });
+      const selectedPartnerId = await db.getSelectedPartnerId(input.quoteId);
+      if (selectedPartnerId !== input.partnerId) throw new TRPCError({ code: "BAD_REQUEST", message: "선정한 파트너에게만 리뷰를 남길 수 있습니다" });
+      const existing = await db.getReviewByQuote(input.quoteId, ctx.user.id);
+      if (existing) throw new TRPCError({ code: "CONFLICT", message: "이미 리뷰를 작성했습니다" });
       const id = await db.createReview({ ...input, customerId: ctx.user.id });
       // Auto-evaluate partner grade after new review
       const gradeResult = await db.evaluateAndUpdatePartnerGrade(input.partnerId);
       return { id, gradeChanged: gradeResult.changed, newGrade: gradeResult.newGrade };
     }),
+    // 이 견적에 내가 남긴 리뷰 (있으면 반환)
+    myReviewForQuote: protectedProcedure.input(z.object({ quoteId: z.number() })).query(async ({ ctx, input }) => db.getReviewByQuote(input.quoteId, ctx.user.id)),
     byPartner: publicProcedure.input(z.object({ partnerId: z.number() })).query(async ({ input }) => db.getReviewsByPartner(input.partnerId)),
     listAll: adminProcedure.query(async () => db.getAllReviews()),
     toggleVisibility: adminProcedure.input(z.object({ id: z.number(), isVisible: z.boolean() })).mutation(async ({ input }) => {

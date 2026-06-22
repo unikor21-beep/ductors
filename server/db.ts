@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, or, sql, like, inArray, isNull, gte, lte } from "drizzle-orm";
+import { eq, ne, desc, asc, and, or, sql, like, inArray, isNull, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, partners, categories, categoryFields,
@@ -589,6 +589,48 @@ export async function updateSubmissionStatus(id: number, status: "submitted" | "
   const db = await getDb();
   if (!db) return;
   await db.update(quoteSubmissions).set({ status }).where(eq(quoteSubmissions.id, id));
+}
+
+// 견적 제출 1건 조회 (선정 권한 검증용)
+export async function getSubmissionById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [s] = await db.select().from(quoteSubmissions).where(eq(quoteSubmissions.id, id)).limit(1);
+  return s || null;
+}
+
+// 선정된 1건 외 나머지 제출 모두 탈락 처리
+export async function rejectOtherSubmissions(quoteId: number, keepId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(quoteSubmissions).set({ status: "rejected" })
+    .where(and(eq(quoteSubmissions.quoteId, quoteId), ne(quoteSubmissions.id, keepId)));
+}
+
+// 모든 제출 탈락 (아무와도 진행 안 함)
+export async function rejectAllSubmissions(quoteId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(quoteSubmissions).set({ status: "rejected" })
+    .where(eq(quoteSubmissions.quoteId, quoteId));
+}
+
+// 선정된 파트너 ID (없으면 null)
+export async function getSelectedPartnerId(quoteId: number): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [s] = await db.select({ partnerId: quoteSubmissions.partnerId }).from(quoteSubmissions)
+    .where(and(eq(quoteSubmissions.quoteId, quoteId), eq(quoteSubmissions.status, "selected"))).limit(1);
+  return s?.partnerId ?? null;
+}
+
+// 이 견적에 고객이 남긴 리뷰 (1회 제한·UI 표시용)
+export async function getReviewByQuote(quoteId: number, customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [r] = await db.select().from(reviews)
+    .where(and(eq(reviews.quoteId, quoteId), eq(reviews.customerId, customerId))).limit(1);
+  return r || null;
 }
 
 // ===================== REVIEWS =====================

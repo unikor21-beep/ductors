@@ -117,7 +117,7 @@ export default function Signup() {
                 <Wind className="w-7 h-7 text-white" />
               </div>
               <h2 className="text-3xl font-bold leading-snug mb-3">덕터스와 함께<br />시작하세요</h2>
-              <p className="text-white/80 text-lg mb-8">Good Air, Better Life!</p>
+              <p className="text-white/80 text-lg mb-8">환기·닥트 시공, 비교하고 선택하세요</p>
               <ul className="space-y-3 text-white/90 text-sm">
                 <li className="flex items-center gap-2"><Check className="w-4 h-4 shrink-0" /> 환기·닥트 시공 견적을 한 번에 비교</li>
                 <li className="flex items-center gap-2"><Check className="w-4 h-4 shrink-0" /> 검증된 파트너 업체와 안전하게 매칭</li>

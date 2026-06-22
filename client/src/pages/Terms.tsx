@@ -159,6 +159,15 @@ export default function Terms() {
             </section>
 
             <section>
+              <h2 className="text-xl font-semibold text-foreground mb-3">제12조의2 (거래 진행 및 이용후기)</h2>
+              <div className="space-y-2 text-muted-foreground leading-relaxed">
+                <p>① 서비스 내에서 제공되는 파트너 선정, 시공 진행·완료 등의 상태 표시는 거래 당사자의 입력에 따른 기록일 뿐이며, 실제 시공 계약의 체결·이행 및 그 책임은 제12조에 따라 이용자와 파트너 간에 있습니다.</p>
+                <p>② 이용후기(리뷰)는 해당 파트너와의 거래를 완료한 이용자에 한하여 작성할 수 있으며, 후기의 내용에 대한 책임은 작성한 이용자에게 있습니다.</p>
+                <p>③ 회사는 허위·비방·광고 등 관련 법령이나 운영정책에 위반되는 후기에 대해 사전 통지 없이 비공개 또는 삭제 조치를 할 수 있습니다.</p>
+              </div>
+            </section>
+
+            <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">제13조 (분쟁해결)</h2>
               <div className="space-y-2 leading-relaxed">
                 <p>① 회사는 이용자가 제기하는 정당한 의견이나 불만을 반영하고 그 피해를 보상처리하기 위하여 고객센터를 운영합니다.</p>
