@@ -142,9 +142,7 @@ export default function Login() {
               {/* 계정 찾기 + 회원가입 */}
               <div className="text-center pt-2 space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <Link href="/find-account/id" className="hover:underline hover:text-foreground">아이디 찾기</Link>
-                  <span className="mx-2 text-border">|</span>
-                  <Link href="/find-account/pw" className="hover:underline hover:text-foreground">비밀번호 찾기</Link>
+                  <Link href="/find-account/id" className="hover:underline hover:text-foreground">아이디 / 비밀번호 찾기</Link>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   아직 덕터스 계정이 없으신가요?{" "}
