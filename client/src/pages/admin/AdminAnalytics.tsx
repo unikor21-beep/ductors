@@ -19,6 +19,13 @@ function startOfMonth() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
+function startOfWeek() {
+  const d = new Date();
+  const day = d.getDay(); // 0=일 ~ 6=토
+  const diff = (day === 0 ? 6 : day - 1); // 월요일 시작
+  d.setDate(d.getDate() - diff);
+  return d.toISOString().slice(0, 10);
+}
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const num = (n: number) => (n || 0).toLocaleString("ko-KR");
@@ -45,16 +52,18 @@ function DistBar({ data, labelMap, color = "#16a34a" }: { data: Record<string, n
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState<Range>({});
-  const [preset, setPreset] = useState<"all" | "year" | "month" | "custom">("all");
+  const [preset, setPreset] = useState<"all" | "year" | "month" | "week" | "today" | "custom">("all");
 
   const { data, isLoading } = trpc.admin.analytics.useQuery(range);
   const rawExport = trpc.admin.rawExport.useQuery(undefined, { enabled: false });
 
-  function applyPreset(p: "all" | "year" | "month") {
+  function applyPreset(p: "all" | "year" | "month" | "week" | "today") {
     setPreset(p);
     if (p === "all") setRange({});
     else if (p === "year") setRange({ from: startOfYear(), to: todayStr() });
     else if (p === "month") setRange({ from: startOfMonth(), to: todayStr() });
+    else if (p === "week") setRange({ from: startOfWeek(), to: todayStr() });
+    else if (p === "today") setRange({ from: todayStr(), to: todayStr() });
   }
 
   const rangeLabel = useMemo(() => {
@@ -139,7 +148,7 @@ export default function AdminAnalytics() {
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            {([["all", "전체"], ["year", "올해"], ["month", "이번 달"]] as const).map(([k, label]) => (
+            {([["all", "전체"], ["year", "올해"], ["month", "이번달"], ["week", "이번주"], ["today", "금일"]] as const).map(([k, label]) => (
               <button key={k} onClick={() => applyPreset(k)}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${preset === k ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted"}`}>
                 {label}
