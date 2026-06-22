@@ -395,3 +395,25 @@ export const signupBonusCampaigns = mysqlTable("signupBonusCampaigns", {
 
 export type SignupBonusCampaign = typeof signupBonusCampaigns.$inferSelect;
 export type InsertSignupBonusCampaign = typeof signupBonusCampaigns.$inferInsert;
+
+// ============================================================
+// 15. MAIN BANNERS (메인페이지 프로모션 배너)
+// ============================================================
+// 관리자가 홍보·이벤트 시 메인페이지에 띄우는 배너. 이미지 + 링크버튼(9분할 위치) + 기간한정.
+export const mainBanners = mysqlTable("mainBanners", {
+  id: int("id").autoincrement().primaryKey(),
+  imageUrl: text("imageUrl").notNull(),                          // 배너 이미지
+  linkUrl: varchar("linkUrl", { length: 500 }),                 // 버튼 클릭 시 이동 (없으면 버튼 미표시)
+  buttonText: varchar("buttonText", { length: 100 }),           // 버튼 라벨 (예: "자세히 보기")
+  // 버튼 위치(9분할): tl/tc/tr / ml/mc/mr / bl/bc/br
+  buttonPosition: varchar("buttonPosition", { length: 2 }).default("bc").notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),             // 노출 순서
+  isActive: boolean("isActive").default(true).notNull(),        // 활성/비활성 토글
+  startsAt: timestamp("startsAt"),                              // 노출 시작(선택, null=즉시)
+  endsAt: timestamp("endsAt"),                                 // 노출 종료(선택, null=무기한)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MainBanner = typeof mainBanners.$inferSelect;
+export type InsertMainBanner = typeof mainBanners.$inferInsert;

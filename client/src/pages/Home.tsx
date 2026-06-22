@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PromoBanner from "@/components/PromoBanner";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { FileText, Search, Wind, ArrowRight, Calculator, Users, Shield, Star, Zap } from "lucide-react";
@@ -108,6 +109,9 @@ export default function Home() {
         {/* Gradient fade to white */}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </section>
+
+      {/* 프로모션 배너 (활성 배너 있을 때만 표시) */}
+      <PromoBanner />
 
       {/* Section 2: Ventilation Calculator */}
       <section className="py-20 md:py-28 bg-background">

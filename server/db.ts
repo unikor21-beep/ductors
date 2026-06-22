@@ -1,17 +1,18 @@
-import { eq, desc, asc, and, or, sql, like, inArray, isNull } from "drizzle-orm";
+import { eq, desc, asc, and, or, sql, like, inArray, isNull, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, partners, categories, categoryFields,
   quotes, quoteViews, quoteSubmissions, reviews, portfolios, chatMessages,
   products, orders, siteSettings, projectManagement,
   userConsents, coupons, userCoupons,
-  walletTransactions, pointBatches, walletSettings, signupBonusCampaigns
+  walletTransactions, pointBatches, walletSettings, signupBonusCampaigns, mainBanners
 } from "../drizzle/schema";
 import type {
   Partner, InsertPartner, Category, CategoryField,
   Quote, InsertQuote, QuoteView, QuoteSubmission,
   Review, Portfolio, Product, Order, SiteSetting, ProjectManagement,
-  UserConsent, InsertUserConsent, Coupon, InsertCoupon, UserCoupon, InsertUserCoupon
+  UserConsent, InsertUserConsent, Coupon, InsertCoupon, UserCoupon, InsertUserCoupon,
+  MainBanner, InsertMainBanner
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1116,4 +1117,64 @@ export async function bulkGrantPoint(partnerIds: number[], amount: number, valid
     if (result !== null) successCount++;
   }
   return successCount;
+}
+
+// ============================================================
+// MAIN BANNERS (메인페이지 프로모션 배너)
+// ============================================================
+
+// [공개] 메인페이지 노출용: 활성 + 기간(시작·종료) 충족만, 순서대로
+export async function getActiveBanners() {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  return db.select().from(mainBanners)
+    .where(and(
+      eq(mainBanners.isActive, true),
+      or(isNull(mainBanners.startsAt), lte(mainBanners.startsAt, now)),
+      or(isNull(mainBanners.endsAt), gte(mainBanners.endsAt, now)),
+    ))
+    .orderBy(asc(mainBanners.sortOrder), desc(mainBanners.createdAt));
+}
+
+// [관리자] 전체 목록 (비활성·기간만료 포함)
+export async function getAllBanners() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(mainBanners).orderBy(asc(mainBanners.sortOrder), desc(mainBanners.createdAt));
+}
+
+export async function createBanner(data: InsertMainBanner) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(mainBanners).values(data).$returningId();
+  return result.id;
+}
+
+export async function updateBanner(id: number, data: Partial<MainBanner>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(mainBanners).set(data as any).where(eq(mainBanners.id, id));
+}
+
+// 하드 삭제 (배너는 종속 데이터가 없어 cascade 불필요)
+export async function deleteBanner(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(mainBanners).where(eq(mainBanners.id, id));
+}
+
+// 노출 순서 swap (카테고리와 동일 패턴)
+export async function swapBannerOrder(idA: number, idB: number) {
+  const db = await getDb();
+  if (!db) return;
+  const rows = await db.select().from(mainBanners).where(inArray(mainBanners.id, [idA, idB]));
+  const a = rows.find((r) => r.id === idA);
+  const b = rows.find((r) => r.id === idB);
+  if (!a || !b) return;
+  const orderA = a.sortOrder ?? a.id;
+  const orderB = b.sortOrder ?? b.id;
+  const tempA = orderA === orderB ? orderA - 1 : orderA;
+  await db.update(mainBanners).set({ sortOrder: orderB }).where(eq(mainBanners.id, idA));
+  await db.update(mainBanners).set({ sortOrder: tempA }).where(eq(mainBanners.id, idB));
 }

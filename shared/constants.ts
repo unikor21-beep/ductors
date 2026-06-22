@@ -56,3 +56,23 @@ export const SETTING_KEYS = {
   HERO_BG: "hero_bg_url",
   SECTION3_BG: "section3_bg_url",
 } as const;
+
+// 메인 배너 버튼 9분할 위치 (관리자 선택 + 표시 공용)
+export const BANNER_POSITIONS = [
+  { key: "tl", label: "상-좌" }, { key: "tc", label: "상-중" }, { key: "tr", label: "상-우" },
+  { key: "ml", label: "중-좌" }, { key: "mc", label: "중-중" }, { key: "mr", label: "중-우" },
+  { key: "bl", label: "하-좌" }, { key: "bc", label: "하-중" }, { key: "br", label: "하-우" },
+] as const;
+
+// 위치 key → 절대배치 Tailwind 클래스
+export const BANNER_POSITION_CLASS: Record<string, string> = {
+  tl: "top-4 left-4",
+  tc: "top-4 left-1/2 -translate-x-1/2",
+  tr: "top-4 right-4",
+  ml: "top-1/2 left-4 -translate-y-1/2",
+  mc: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+  mr: "top-1/2 right-4 -translate-y-1/2",
+  bl: "bottom-4 left-4",
+  bc: "bottom-4 left-1/2 -translate-x-1/2",
+  br: "bottom-4 right-4",
+};

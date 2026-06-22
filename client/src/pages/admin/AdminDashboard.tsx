@@ -15,6 +15,7 @@ import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAl
 import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
+const BannerManager = lazy(() => import("./BannerManager"));
 const CategoryManager = lazy(() => import("./CategoryManager"));
 const AdminWalletManager = lazy(() => import("./AdminWalletManager"));
 
@@ -89,6 +90,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="categories">카테고리</TabsTrigger>
               <TabsTrigger value="wallet">지갑 관리</TabsTrigger>
               <TabsTrigger value="backgrounds">배경 관리</TabsTrigger>
+              <TabsTrigger value="banners">배너 관리</TabsTrigger>
             </TabsList>
 
             {/* Stats */}
@@ -326,6 +328,13 @@ export default function AdminDashboard() {
             <TabsContent value="backgrounds" className="mt-4">
               <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
                 <BackgroundManager />
+              </Suspense>
+            </TabsContent>
+
+            {/* Banners */}
+            <TabsContent value="banners" className="mt-4">
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+                <BannerManager />
               </Suspense>
             </TabsContent>
           </Tabs>

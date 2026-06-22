@@ -235,6 +235,49 @@ export const appRouter = router({
     }),
   }),
 
+  // ===================== MAIN BANNERS (메인 프로모션 배너) =====================
+  banners: router({
+    // 공개: 메인페이지 노출용 (활성 + 기간 충족만)
+    list: publicProcedure.query(async () => db.getActiveBanners()),
+    // 관리자: 전체 목록
+    listAll: adminProcedure.query(async () => db.getAllBanners()),
+    create: adminProcedure.input(z.object({
+      imageUrl: z.string().min(1, "배너 이미지를 업로드하세요"),
+      linkUrl: z.string().optional(),
+      buttonText: z.string().optional(),
+      buttonPosition: z.enum(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]).optional(),
+      sortOrder: z.number().optional(),
+      startsAt: z.date().nullable().optional(),
+      endsAt: z.date().nullable().optional(),
+    })).mutation(async ({ input }) => {
+      const id = await db.createBanner(input);
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number(),
+      imageUrl: z.string().optional(),
+      linkUrl: z.string().nullable().optional(),
+      buttonText: z.string().nullable().optional(),
+      buttonPosition: z.enum(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]).optional(),
+      sortOrder: z.number().optional(),
+      isActive: z.boolean().optional(),
+      startsAt: z.date().nullable().optional(),
+      endsAt: z.date().nullable().optional(),
+    })).mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await db.updateBanner(id, data as any);
+      return { success: true };
+    }),
+    delete: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      await db.deleteBanner(input.id);
+      return { success: true };
+    }),
+    swapOrder: adminProcedure.input(z.object({ idA: z.number(), idB: z.number() })).mutation(async ({ input }) => {
+      await db.swapBannerOrder(input.idA, input.idB);
+      return { success: true };
+    }),
+  }),
+
   // ===================== QUOTES =====================
   quotes: router({
     create: protectedProcedure.input(z.object({
