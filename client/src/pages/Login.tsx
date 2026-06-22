@@ -69,12 +69,7 @@ export default function Login() {
             <CardContent className="p-6 space-y-4">
               {/* 아이디/비밀번호 로그인 (메인) */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label className="text-sm font-medium">아이디</Label>
-                  <Link href="/find-account/id" className="text-xs text-muted-foreground hover:underline">
-                    아이디를 잊으셨나요?
-                  </Link>
-                </div>
+                <Label className="text-sm font-medium mb-1.5 block">아이디</Label>
                 <Input
                   placeholder="아이디"
                   autoComplete="off"
@@ -84,12 +79,7 @@ export default function Login() {
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label className="text-sm font-medium">비밀번호</Label>
-                  <Link href="/find-account/pw" className="text-xs text-muted-foreground hover:underline">
-                    비밀번호를 잊으셨나요?
-                  </Link>
-                </div>
+                <Label className="text-sm font-medium mb-1.5 block">비밀번호</Label>
                 <Input
                   type="password"
                   placeholder="비밀번호"
@@ -149,10 +139,15 @@ export default function Login() {
                 Google로 로그인
               </button>
 
-              {/* 회원가입 */}
-              <div className="text-center pt-2">
+              {/* 계정 찾기 + 회원가입 */}
+              <div className="text-center pt-2 space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  아직 계정이 없으신가요?{" "}
+                  <Link href="/find-account/id" className="hover:underline hover:text-foreground">아이디 찾기</Link>
+                  <span className="mx-2 text-border">|</span>
+                  <Link href="/find-account/pw" className="hover:underline hover:text-foreground">비밀번호 찾기</Link>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  아직 덕터스 계정이 없으신가요?{" "}
                   <Link href="/signup" className="text-primary font-medium hover:underline">
                     회원가입
                   </Link>
