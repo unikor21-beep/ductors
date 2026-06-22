@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Send, MessageCircle, MapPin, Calendar, Loader2, X, Tag } from "lucide-react";
+import { formatPhoneDisplay } from "@shared/phone";
 
 interface Props {
   quoteId: number;
@@ -85,7 +86,8 @@ export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenCh
                 <Label className="text-sm font-semibold mb-2 block">의뢰자 정보</Label>
                 <div className="space-y-1 text-sm">
                   {quote.customer.name && <p><span className="text-muted-foreground">이름: </span>{quote.customer.name}</p>}
-                  {quote.customer.phone && <p><span className="text-muted-foreground">연락처: </span>{quote.customer.phone}</p>}
+                  {quote.customer.phone && <p><span className="text-muted-foreground">휴대전화: </span>{formatPhoneDisplay(quote.customer.phone)}</p>}
+                  {(quote.customer as any).landline && <p><span className="text-muted-foreground">전화번호: </span>{formatPhoneDisplay((quote.customer as any).landline)}</p>}
                   {quote.customer.email && <p><span className="text-muted-foreground">이메일: </span>{quote.customer.email}</p>}
                 </div>
               </div>

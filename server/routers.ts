@@ -67,7 +67,8 @@ export const appRouter = router({
         password: z.string().min(8, "비밀번호는 8자 이상"),
         name: z.string().min(1, "이름을 입력하세요"),
         email: z.string().email("올바른 이메일 형식이 아닙니다"),
-        phone: z.string().min(1, "전화번호를 입력하세요"),
+        phone: z.string().min(1, "휴대전화를 입력하세요"),
+        landline: z.string().optional(),
         securityQuestion: z.string().min(1, "보안 질문을 선택하세요"),
         securityAnswer: z.string().min(1, "보안 질문 답을 입력하세요"),
       }))
@@ -87,6 +88,7 @@ export const appRouter = router({
           name: input.name,
           email: input.email,
           phone: input.phone,
+          landline: input.landline,
           securityQuestion: input.securityQuestion,
           securityAnswerHash,
         });

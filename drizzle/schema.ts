@@ -13,6 +13,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),
+  landline: varchar("landline", { length: 20 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin", "partner"]).default("user").notNull(),
   profileImage: text("profileImage"),

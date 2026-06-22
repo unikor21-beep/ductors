@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { UserPlus, Check, X, Loader2, Wind } from "lucide-react";
 import { toast } from "sonner";
 import { SIGNUP_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
+import { AREA_CODES, formatMobileInput, isValidMobile, formatLandlineLocal, composeLandline } from "@shared/phone";
 
 const SECURITY_QUESTIONS = [
   "어머니의 성함은?",
@@ -50,7 +51,8 @@ export default function Signup() {
 
   // 가입 폼
   const [form, setForm] = useState({
-    username: "", password: "", passwordConfirm: "", name: "", email: "", phone: "",
+    username: "", password: "", passwordConfirm: "", name: "", email: "",
+    mobile: "", landlineArea: "02", landlineLocal: "",
     securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
   });
   const [usernameChecked, setUsernameChecked] = useState<boolean | null>(null);
@@ -72,7 +74,7 @@ export default function Signup() {
   const passwordMatch = form.password && form.password === form.passwordConfirm;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   const formValid = usernameChecked === true && passwordMatch && form.password.length >= 8
-    && form.name && emailValid && form.phone && form.securityAnswer;
+    && form.name && emailValid && isValidMobile(form.mobile) && form.securityAnswer;
 
   const handleSubmit = () => {
     if (!canAgree) { toast.error("필수 약관에 동의해주세요"); return; }
@@ -80,10 +82,11 @@ export default function Signup() {
     if (!passwordMatch) { toast.error("비밀번호가 일치하지 않습니다"); return; }
     if (form.password.length < 8) { toast.error("비밀번호는 8자 이상이어야 합니다"); return; }
     if (!emailValid) { toast.error("올바른 이메일을 입력하세요"); return; }
-    if (!form.phone) { toast.error("전화번호를 입력하세요"); return; }
+    if (!isValidMobile(form.mobile)) { toast.error("휴대전화 번호를 정확히 입력하세요"); return; }
     signup.mutate({
       username: form.username, password: form.password, name: form.name,
-      email: form.email, phone: form.phone,
+      email: form.email, phone: form.mobile,
+      landline: composeLandline(form.landlineArea, form.landlineLocal) || undefined,
       securityQuestion: form.securityQuestion, securityAnswer: form.securityAnswer,
     });
   };
@@ -190,8 +193,33 @@ export default function Signup() {
                   <Input type="email" placeholder="example@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium mb-1.5 block">전화번호 *</Label>
-                  <Input placeholder="010-0000-0000" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <Label className="text-sm font-medium mb-1.5 block">휴대전화 *</Label>
+                  <Input
+                    placeholder="010-0000-0000"
+                    inputMode="numeric"
+                    value={form.mobile}
+                    onChange={(e) => setForm({ ...form, mobile: formatMobileInput(e.target.value) })}
+                  />
+                  {form.mobile && !isValidMobile(form.mobile) && (
+                    <p className="text-xs text-destructive mt-1">휴대전화 번호를 정확히 입력하세요 (예: 010-1234-5678)</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-1.5 block">전화번호 <span className="text-xs text-muted-foreground font-normal">(선택)</span></Label>
+                  <div className="flex gap-2">
+                    <Select value={form.landlineArea} onValueChange={(v) => setForm({ ...form, landlineArea: v })}>
+                      <SelectTrigger className="w-24 shrink-0"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {AREA_CODES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder="123-4567"
+                      inputMode="numeric"
+                      value={form.landlineLocal}
+                      onChange={(e) => setForm({ ...form, landlineLocal: formatLandlineLocal(e.target.value) })}
+                    />
+                  </div>
                 </div>
                 <div className="pt-2 border-t border-border/40">
                   <Label className="text-sm font-medium mb-1.5 block">보안 질문 * <span className="text-xs text-muted-foreground font-normal">(비밀번호 찾기에 사용)</span></Label>

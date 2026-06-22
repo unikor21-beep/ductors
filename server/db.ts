@@ -63,6 +63,7 @@ export async function createLocalUser(data: {
   name: string;
   email: string;
   phone: string;
+  landline?: string;
   securityQuestion: string;
   securityAnswerHash: string;
 }) {
@@ -77,6 +78,7 @@ export async function createLocalUser(data: {
     name: data.name,
     email: data.email,
     phone: data.phone,
+    landline: data.landline || null,
     loginMethod: "local",
     securityQuestion: data.securityQuestion,
     securityAnswerHash: data.securityAnswerHash,
@@ -287,7 +289,7 @@ export async function getQuoteWithCustomer(id: number) {
   const [customer] = await db.select().from(users).where(eq(users.id, quote.customerId)).limit(1);
   return {
     ...quote,
-    customer: customer ? { name: customer.name, phone: customer.phone, email: customer.email } : null,
+    customer: customer ? { name: customer.name, phone: customer.phone, landline: customer.landline, email: customer.email } : null,
   };
 }
 
