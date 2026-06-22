@@ -494,13 +494,20 @@ export async function getAllQuotes() {
   if (!db) return [];
   const selp = alias(partners, "selp");
   const dp = alias(partners, "dp");
+  const leafCat = alias(categories, "leafCat");
+  const parentCat = alias(categories, "parentCat");
   return db.select({
     ...quoteListColumns,
-    categoryName: categories.name,
+    // 대분류명 (세부분야가 선택된 경우 그 부모, 아니면 자기 자신)
+    categoryName: sql<string>`COALESCE(${parentCat.name}, ${leafCat.name})`,
+    customerUsername: users.username,
+    customerName: users.name,
     selectedPartnerName: selp.companyName,
     designatedPartnerName: dp.companyName,
   }).from(quotes)
-    .leftJoin(categories, eq(categories.id, quotes.categoryId))
+    .leftJoin(leafCat, eq(leafCat.id, quotes.categoryId))
+    .leftJoin(parentCat, eq(parentCat.id, leafCat.parentId))
+    .leftJoin(users, eq(users.id, quotes.customerId))
     .leftJoin(quoteSubmissions, and(eq(quoteSubmissions.quoteId, quotes.id), eq(quoteSubmissions.status, "selected")))
     .leftJoin(selp, eq(selp.id, quoteSubmissions.partnerId))
     .leftJoin(dp, eq(dp.id, quotes.designatedPartnerId))

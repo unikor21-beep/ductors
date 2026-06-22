@@ -453,14 +453,14 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50 border-b">
                         <tr>
-                          <th className="text-left p-3 font-medium">ID</th>
+                          <th className="text-left p-3 font-medium">아이디</th>
+                          <th className="text-left p-3 font-medium">등록일</th>
                           <th className="text-left p-3 font-medium">제목</th>
                           <th className="text-left p-3 font-medium">공사유형</th>
-                          <th className="text-left p-3 font-medium">유형</th>
+                          <th className="text-left p-3 font-medium">견적유형</th>
                           <th className="text-left p-3 font-medium">지역</th>
                           <th className="text-left p-3 font-medium">상태</th>
                           <th className="text-left p-3 font-medium">매칭 파트너</th>
-                          <th className="text-left p-3 font-medium">등록일</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -469,10 +469,16 @@ export default function AdminDashboard() {
                           const sc = QUOTE_STATUS_COLOR[q.status];
                           return (
                             <tr key={q.id} className="border-b border-border/50 hover:bg-muted/30">
-                              <td className="p-3">{q.id}</td>
+                              <td className="p-3 text-muted-foreground">{q.customerUsername || q.customerName || "-"}</td>
+                              <td className="p-3 text-muted-foreground">{new Date(q.createdAt).toLocaleDateString("ko-KR")}</td>
                               <td className="p-3 font-medium">{q.title}</td>
                               <td className="p-3 text-muted-foreground">{q.categoryName || "-"}</td>
-                              <td className="p-3"><Badge variant="outline">{q.type === "public" ? "공개" : "지정"}</Badge></td>
+                              <td className="p-3">
+                                <span className="text-xs font-medium px-2 py-0.5 rounded border bg-white"
+                                  style={{ color: q.type === "public" ? "#2563eb" : "#ea580c", borderColor: q.type === "public" ? "#bfdbfe" : "#fed7aa" }}>
+                                  {q.type === "public" ? "공개" : "지정"}
+                                </span>
+                              </td>
                               <td className="p-3 text-muted-foreground">{q.region || "-"}</td>
                               <td className="p-3">
                                 <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: sc?.bg, color: sc?.color }}>
@@ -480,7 +486,6 @@ export default function AdminDashboard() {
                                 </span>
                               </td>
                               <td className="p-3 text-muted-foreground">{matchedPartner || "-"}</td>
-                              <td className="p-3 text-muted-foreground">{new Date(q.createdAt).toLocaleDateString("ko-KR")}</td>
                             </tr>
                           );
                         })}
