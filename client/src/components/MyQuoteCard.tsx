@@ -123,6 +123,14 @@ export default function MyQuoteCard({ q }: { q: any }) {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
+                  <span
+                    className="shrink-0 text-xs font-medium px-2 py-0.5 rounded border bg-white"
+                    style={q.type === "public"
+                      ? { color: "#2563eb", borderColor: "#bfdbfe" }
+                      : { color: "#ea580c", borderColor: "#fed7aa" }}
+                  >
+                    {q.type === "public" ? "공개" : "지정"}
+                  </span>
                   <h3 className="font-semibold truncate">{q.title}</h3>
                   {unreadCount > 0 && (
                     <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold">{unreadCount}</span>
