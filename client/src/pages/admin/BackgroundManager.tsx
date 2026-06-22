@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, Image as ImageIcon, Loader2, RotateCcw, ExternalLink } from "lucide-react";
-import { HERO_BG_DEFAULT, SECTION3_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
+import { HERO_BG_DEFAULT, SECTION3_BG_DEFAULT, SIGNUP_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
 
 type SectionConfig = {
   key: string;
@@ -27,6 +27,12 @@ const SECTIONS: SectionConfig[] = [
     label: "3단 파트너스 배경",
     description: "메인 페이지 하단 파트너스 영역의 배경 이미지입니다. 권장 크기: 1920x800px 이상",
     defaultUrl: SECTION3_BG_DEFAULT,
+  },
+  {
+    key: SETTING_KEYS.SIGNUP_BG,
+    label: "가입 페이지 배경",
+    description: "회원가입 페이지 왼쪽 패널의 배경 이미지입니다. 권장 크기: 1200x1600px 이상(세로형)",
+    defaultUrl: SIGNUP_BG_DEFAULT,
   },
 ];
 

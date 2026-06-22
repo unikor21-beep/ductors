@@ -13,7 +13,10 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { UserPlus, Check, X, Loader2, Wind } from "lucide-react";
 import { toast } from "sonner";
-import { HERO_BG_DEFAULT } from "@shared/constants";
+import { SIGNUP_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
+
+// 로그인/가입 공용 브랜드 버튼 색 (밝은 그린)
+const BRAND_GREEN = "#22c55e";
 
 const SECURITY_QUESTIONS = [
   "어머니의 성함은?",
@@ -27,10 +30,16 @@ export default function Signup() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
 
-  // 이미 로그인 상태면 홈으로
   useEffect(() => {
     if (!loading && isAuthenticated) navigate("/");
   }, [loading, isAuthenticated, navigate]);
+
+  // 관리자가 설정한 가입 페이지 배경
+  const { data: signupBgSetting } = trpc.settings.get.useQuery(
+    { key: SETTING_KEYS.SIGNUP_BG },
+    { staleTime: 5 * 60 * 1000 }
+  );
+  const signupBg = signupBgSetting || SIGNUP_BG_DEFAULT;
 
   // 약관 동의
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -84,7 +93,7 @@ export default function Signup() {
 
   // SNS 가입 (필수 약관 동의 후)
   const handleSocialSignup = () => {
-    if (!canAgree) { toast.error("필수 약관에 동의해주세요"); return; }
+    if (!canAgree) { toast.error("먼저 아래 필수 약관에 동의해주세요"); return; }
     window.location.href = getLoginUrl();
   };
   const snsClass = (base: string) => `w-full flex items-center justify-center gap-3 h-11 rounded-xl font-medium text-sm transition-all ${canAgree ? base : "opacity-50 cursor-not-allowed"}`;
@@ -98,7 +107,7 @@ export default function Signup() {
           <div
             className="hidden md:flex relative items-center justify-center p-12 text-white"
             style={{
-              backgroundImage: `linear-gradient(135deg, rgba(20,83,45,0.92), rgba(22,101,52,0.82)), url(${HERO_BG_DEFAULT})`,
+              backgroundImage: `linear-gradient(135deg, rgba(20,83,45,0.92), rgba(22,101,52,0.82)), url(${signupBg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -117,14 +126,38 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* 오른쪽: 가입 폼 */}
+          {/* 오른쪽: 가입 (SNS 먼저 → 폼) */}
           <div className="flex items-center justify-center p-6 md:p-12">
             <div className="w-full max-w-md py-8">
               <h1 className="text-2xl font-bold mb-1">회원가입</h1>
-              <p className="text-muted-foreground text-sm mb-6">아이디와 정보를 입력해 가입하세요</p>
+              <p className="text-muted-foreground text-sm mb-6">SNS로 빠르게, 또는 아이디로 가입하세요</p>
 
               <div className="space-y-4">
-                {/* 아이디 */}
+                {/* SNS 가입 (먼저) */}
+                <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("hover:opacity-90")} style={{ backgroundColor: "#FEE500", color: "#191919" }}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3C5.58 3 2 5.79 2 9.21c0 2.17 1.45 4.08 3.64 5.18l-.93 3.41c-.08.3.26.54.52.37l4.07-2.68c.23.02.46.03.7.03 4.42 0 8-2.79 8-6.21S14.42 3 10 3z" fill="#191919"/></svg>
+                  카카오로 가입
+                </button>
+                <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("text-white hover:opacity-90")} style={{ backgroundColor: "#03C75A" }}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13.36 10.53L6.4 3H3v14h3.64V9.47L13.6 17H17V3h-3.64v7.53z" fill="white"/></svg>
+                  네이버로 가입
+                </button>
+                <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("border border-border bg-white text-foreground hover:bg-gray-50")}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M19.6 10.23c0-.68-.06-1.36-.17-2.02H10v3.84h5.38a4.6 4.6 0 01-2 3.02v2.5h3.24c1.89-1.74 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
+                    <path d="M10 20c2.7 0 4.96-.9 6.62-2.43l-3.24-2.5c-.9.6-2.04.95-3.38.95-2.6 0-4.8-1.76-5.58-4.12H1.08v2.58A9.99 9.99 0 0010 20z" fill="#34A853"/>
+                    <path d="M4.42 11.9A6.01 6.01 0 014.1 10c0-.66.12-1.3.32-1.9V5.52H1.08A9.99 9.99 0 000 10c0 1.61.39 3.14 1.08 4.48l3.34-2.58z" fill="#FBBC05"/>
+                    <path d="M10 3.98c1.47 0 2.78.5 3.82 1.5l2.86-2.86C14.96.99 12.7 0 10 0A9.99 9.99 0 001.08 5.52l3.34 2.58C5.2 5.74 7.4 3.98 10 3.98z" fill="#EA4335"/>
+                  </svg>
+                  Google로 가입
+                </button>
+
+                <div className="relative my-2">
+                  <Separator />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">또는 아이디로 가입</span>
+                </div>
+
+                {/* 아이디 가입 폼 */}
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">아이디 *</Label>
                   <div className="flex gap-2">
@@ -141,7 +174,6 @@ export default function Signup() {
                   {usernameChecked === false && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><X className="w-3 h-3" /> 사용 불가</p>}
                 </div>
 
-                {/* 비밀번호 */}
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">비밀번호 *</Label>
                   <Input type="password" placeholder="8자 이상" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
@@ -152,8 +184,6 @@ export default function Signup() {
                   {form.passwordConfirm && !passwordMatch && <p className="text-xs text-destructive mt-1">비밀번호가 일치하지 않습니다</p>}
                   {passwordMatch && <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><Check className="w-3 h-3" /> 일치</p>}
                 </div>
-
-                {/* 이름 / 이메일 / 전화 */}
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">이름 *</Label>
                   <Input placeholder="이름" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -166,8 +196,6 @@ export default function Signup() {
                   <Label className="text-sm font-medium mb-1.5 block">전화번호 *</Label>
                   <Input placeholder="010-0000-0000" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </div>
-
-                {/* 보안 질문 */}
                 <div className="pt-2 border-t border-border/40">
                   <Label className="text-sm font-medium mb-1.5 block">보안 질문 * <span className="text-xs text-muted-foreground font-normal">(비밀번호 찾기에 사용)</span></Label>
                   <Select value={form.securityQuestion} onValueChange={(v) => setForm({ ...form, securityQuestion: v })}>
@@ -187,56 +215,32 @@ export default function Signup() {
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Checkbox id="agree-terms" checked={agreeTerms} onCheckedChange={(c) => setAgreeTerms(c === true)} />
-                    <label htmlFor="agree-terms" className="text-sm cursor-pointer flex-1">
-                      <span className="text-red-500 font-medium">[필수]</span> 서비스 이용약관 동의
-                    </label>
+                    <label htmlFor="agree-terms" className="text-sm cursor-pointer flex-1"><span className="text-red-500 font-medium">[필수]</span> 서비스 이용약관 동의</label>
                     <Link href="/terms" className="text-xs text-primary hover:underline">보기</Link>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Checkbox id="agree-privacy" checked={agreePrivacy} onCheckedChange={(c) => setAgreePrivacy(c === true)} />
-                    <label htmlFor="agree-privacy" className="text-sm cursor-pointer flex-1">
-                      <span className="text-red-500 font-medium">[필수]</span> 개인정보 수집·이용 동의
-                    </label>
+                    <label htmlFor="agree-privacy" className="text-sm cursor-pointer flex-1"><span className="text-red-500 font-medium">[필수]</span> 개인정보 수집·이용 동의</label>
                     <Link href="/privacy" className="text-xs text-primary hover:underline">보기</Link>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Checkbox id="agree-marketing" checked={agreeMarketing} onCheckedChange={(c) => setAgreeMarketing(c === true)} />
-                    <label htmlFor="agree-marketing" className="text-sm cursor-pointer flex-1">
-                      <span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의
-                    </label>
+                    <label htmlFor="agree-marketing" className="text-sm cursor-pointer flex-1"><span className="text-muted-foreground font-medium">[선택]</span> 마케팅 정보 수신 동의</label>
                     <Link href="/marketing" className="text-xs text-primary hover:underline">보기</Link>
                   </div>
                 </div>
 
-                {/* 가입 버튼 */}
-                <Button className="w-full h-12 rounded-xl gap-2" disabled={!canAgree || !formValid || signup.isPending} onClick={handleSubmit}>
+                {/* 가입 버튼 (밝은 그린) */}
+                <Button
+                  className="w-full h-12 rounded-xl gap-2 text-white hover:opacity-90"
+                  style={{ backgroundColor: BRAND_GREEN }}
+                  disabled={!canAgree || !formValid || signup.isPending}
+                  onClick={handleSubmit}
+                >
                   {signup.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   회원가입
                 </Button>
                 {!canAgree && <p className="text-xs text-red-500 text-center">필수 약관에 동의해야 가입을 진행할 수 있습니다</p>}
-
-                {/* 구분선 + SNS */}
-                <div className="relative my-1">
-                  <Separator />
-                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">또는 SNS로 가입</span>
-                </div>
-                <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("hover:opacity-90")} style={{ backgroundColor: "#FEE500", color: "#191919" }}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3C5.58 3 2 5.79 2 9.21c0 2.17 1.45 4.08 3.64 5.18l-.93 3.41c-.08.3.26.54.52.37l4.07-2.68c.23.02.46.03.7.03 4.42 0 8-2.79 8-6.21S14.42 3 10 3z" fill="#191919"/></svg>
-                  카카오로 가입
-                </button>
-                <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("text-white hover:opacity-90")} style={{ backgroundColor: "#03C75A" }}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13.36 10.53L6.4 3H3v14h3.64V9.47L13.6 17H17V3h-3.64v7.53z" fill="white"/></svg>
-                  네이버로 가입
-                </button>
-                <button onClick={handleSocialSignup} disabled={!canAgree} className={snsClass("border border-border bg-white text-foreground hover:bg-gray-50")}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M19.6 10.23c0-.68-.06-1.36-.17-2.02H10v3.84h5.38a4.6 4.6 0 01-2 3.02v2.5h3.24c1.89-1.74 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
-                    <path d="M10 20c2.7 0 4.96-.9 6.62-2.43l-3.24-2.5c-.9.6-2.04.95-3.38.95-2.6 0-4.8-1.76-5.58-4.12H1.08v2.58A9.99 9.99 0 0010 20z" fill="#34A853"/>
-                    <path d="M4.42 11.9A6.01 6.01 0 014.1 10c0-.66.12-1.3.32-1.9V5.52H1.08A9.99 9.99 0 000 10c0 1.61.39 3.14 1.08 4.48l3.34-2.58z" fill="#FBBC05"/>
-                    <path d="M10 3.98c1.47 0 2.78.5 3.82 1.5l2.86-2.86C14.96.99 12.7 0 10 0A9.99 9.99 0 001.08 5.52l3.34 2.58C5.2 5.74 7.4 3.98 10 3.98z" fill="#EA4335"/>
-                  </svg>
-                  Google로 가입
-                </button>
 
                 <p className="text-center text-sm text-muted-foreground pt-2">
                   이미 계정이 있으신가요?{" "}

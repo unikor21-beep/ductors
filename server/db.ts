@@ -253,6 +253,24 @@ export async function createQuote(data: Omit<InsertQuote, "id" | "createdAt" | "
   return result.id;
 }
 
+// 목록 조회용 컬럼셋 — 거대한 첨부사진(attachments)은 제외해 목록이 무거워/깨지지 않게 함.
+// (attachments는 상세조회 getQuoteById/getQuoteWithCustomer 에서만 가져옴)
+const quoteListColumns = {
+  id: quotes.id,
+  customerId: quotes.customerId,
+  categoryId: quotes.categoryId,
+  type: quotes.type,
+  designatedPartnerId: quotes.designatedPartnerId,
+  title: quotes.title,
+  description: quotes.description,
+  region: quotes.region,
+  address: quotes.address,
+  formData: quotes.formData,
+  status: quotes.status,
+  createdAt: quotes.createdAt,
+  updatedAt: quotes.updatedAt,
+};
+
 export async function getQuoteById(id: number) {
   const db = await getDb();
   if (!db) return null;
@@ -276,19 +294,19 @@ export async function getQuoteWithCustomer(id: number) {
 export async function getQuotesByCustomer(customerId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(quotes).where(eq(quotes.customerId, customerId)).orderBy(desc(quotes.createdAt));
+  return db.select(quoteListColumns).from(quotes).where(eq(quotes.customerId, customerId)).orderBy(desc(quotes.createdAt));
 }
 
 // 고객의 진행중 견적 개수 (매칭됨/진행중 = 정산 안 끝난 거래)
 export async function countActiveQuotesByCustomer(customerId: number) {
   const db = await getDb();
   if (!db) return 0;
-  const rows = await db.select().from(quotes)
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(quotes)
     .where(and(
       eq(quotes.customerId, customerId),
       inArray(quotes.status, ["matched", "in_progress"])
     ));
-  return rows.length;
+  return rows[0]?.count ?? 0;
 }
 
 // 회원 탈퇴 처리 (Soft Delete - 데이터 보관, 로그인 차단)
@@ -303,7 +321,7 @@ export async function deactivateUser(userId: number, reason?: string) {
 export async function getPublicQuotes() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(quotes).where(eq(quotes.type, "public")).orderBy(desc(quotes.createdAt));
+  return db.select(quoteListColumns).from(quotes).where(eq(quotes.type, "public")).orderBy(desc(quotes.createdAt));
 }
 
 // 파트너 맞춤 공개 견적 (지역 + 카테고리 매칭)
@@ -320,7 +338,7 @@ export async function getMatchedPublicQuotes(partnerId: number) {
   const partnerSpecialties = (partner.specialties as string[]) || []; // 대분류 카테고리 ID(문자열)
 
   // 전체 공개 견적
-  const allPublic = await db.select().from(quotes)
+  const allPublic = await db.select(quoteListColumns).from(quotes)
     .where(eq(quotes.type, "public"))
     .orderBy(desc(quotes.createdAt));
 
@@ -362,13 +380,13 @@ export async function getMatchedPublicQuotes(partnerId: number) {
 export async function getDesignatedQuotes(partnerId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(quotes).where(and(eq(quotes.type, "designated"), eq(quotes.designatedPartnerId, partnerId))).orderBy(desc(quotes.createdAt));
+  return db.select(quoteListColumns).from(quotes).where(and(eq(quotes.type, "designated"), eq(quotes.designatedPartnerId, partnerId))).orderBy(desc(quotes.createdAt));
 }
 
 export async function getAllQuotes() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(quotes).orderBy(desc(quotes.createdAt));
+  return db.select(quoteListColumns).from(quotes).orderBy(desc(quotes.createdAt));
 }
 
 export async function updateQuoteStatus(id: number, status: string) {

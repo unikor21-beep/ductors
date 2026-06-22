@@ -52,9 +52,12 @@ export const GRADE_COLORS: Record<string, string> = {
 };
 
 // Site settings keys for admin-managed background images
+export const SIGNUP_BG_DEFAULT = HERO_BG_DEFAULT;
+
 export const SETTING_KEYS = {
   HERO_BG: "hero_bg_url",
   SECTION3_BG: "section3_bg_url",
+  SIGNUP_BG: "signup_bg_url",
 } as const;
 
 // 메인 배너 버튼 9분할 위치 (관리자 선택 + 표시 공용)

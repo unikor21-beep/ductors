@@ -294,12 +294,7 @@ export const appRouter = router({
       const id = await db.createQuote({ ...input, customerId: ctx.user.id, formData: input.formData || {}, attachments: input.attachments || [] });
       return { id };
     }),
-    myQuotes: protectedProcedure.query(async ({ ctx }) => {
-      const rows = await db.getQuotesByCustomer(ctx.user.id);
-      // [임시 디버그 — 확인 후 제거] 실제 세션의 user 정보와 조회 건수
-      console.log(`[myQuotes 디버그] user.id=${ctx.user.id} | openId=${ctx.user.openId} | username=${ctx.user.username ?? "-"} | role=${ctx.user.role} | 조회=${rows.length}건`);
-      return rows;
-    }),
+    myQuotes: protectedProcedure.query(async ({ ctx }) => db.getQuotesByCustomer(ctx.user.id)),
     getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => db.getQuoteById(input.id)),
     // 파트너용 상세 (열람한 견적만 의뢰자 정보 포함)
     detailForPartner: partnerProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
