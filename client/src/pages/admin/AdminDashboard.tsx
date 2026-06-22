@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
-import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle } from "lucide-react";
+import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search } from "lucide-react";
 import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
@@ -33,6 +34,19 @@ export default function AdminDashboard() {
   const { data: allProducts } = trpc.products.listAll.useQuery(undefined, { enabled: isAuthenticated && user?.role === "admin" && activeTab === "products" });
 
   const utils = trpc.useUtils();
+
+  // 검색(필터)
+  const [userSearch, setUserSearch] = useState("");
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const norm = (v: any) => String(v ?? "").toLowerCase();
+  const uq = userSearch.trim().toLowerCase();
+  const filteredUsers = (allUsers || []).filter((u: any) =>
+    !uq || [u.name, u.username, u.email, u.phone, String(u.id)].some((f) => norm(f).includes(uq))
+  );
+  const pq = partnerSearch.trim().toLowerCase();
+  const filteredPartners = (allPartners || []).filter((p: any) =>
+    !pq || [p.companyName, p.representativeName, p.phone, p.email, p.businessNumber, String(p.id)].some((f) => norm(f).includes(pq))
+  );
 
   const updatePartnerStatus = trpc.partners.updateStatus.useMutation({
     onSuccess: () => { toast.success("파트너 상태가 변경되었습니다"); utils.partners.listAll.invalidate(); },
@@ -116,7 +130,16 @@ export default function AdminDashboard() {
             </TabsContent>
 
             {/* Users */}
-            <TabsContent value="users" className="mt-4">
+            <TabsContent value="users" className="mt-4 space-y-3">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder="이름·아이디·이메일·전화번호 검색"
+                  className="pl-9"
+                />
+              </div>
               <Card className="border-border/50 shadow-sm">
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -125,21 +148,28 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="text-left p-3 font-medium">ID</th>
                           <th className="text-left p-3 font-medium">이름</th>
+                          <th className="text-left p-3 font-medium">아이디</th>
                           <th className="text-left p-3 font-medium">이메일</th>
-                          <th className="text-left p-3 font-medium">역할</th>
+                          <th className="text-left p-3 font-medium">전화번호</th>
                           <th className="text-left p-3 font-medium">가입일</th>
+                          <th className="text-left p-3 font-medium">역할</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(allUsers || []).map((u) => (
+                        {filteredUsers.map((u: any) => (
                           <tr key={u.id} className="border-b border-border/50 hover:bg-muted/30">
                             <td className="p-3">{u.id}</td>
                             <td className="p-3 font-medium">{u.name || "-"}</td>
+                            <td className="p-3 text-muted-foreground">{u.username || "-"}</td>
                             <td className="p-3 text-muted-foreground">{u.email || "-"}</td>
-                            <td className="p-3"><Badge variant="secondary">{u.role}</Badge></td>
+                            <td className="p-3 text-muted-foreground">{u.phone || "-"}</td>
                             <td className="p-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString("ko-KR")}</td>
+                            <td className="p-3"><Badge variant="secondary">{u.role}</Badge></td>
                           </tr>
                         ))}
+                        {filteredUsers.length === 0 && (
+                          <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</td></tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -149,7 +179,19 @@ export default function AdminDashboard() {
 
             {/* Partners */}
             <TabsContent value="partners" className="mt-4 space-y-3">
-              {(allPartners || []).map((p) => (
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                  placeholder="업체명·대표자·전화번호·사업자번호 검색"
+                  className="pl-9"
+                />
+              </div>
+              {filteredPartners.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground">검색 결과가 없습니다</div>
+              )}
+              {filteredPartners.map((p: any) => (
                 <Card key={p.id} className="border-border/50 shadow-sm">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between gap-4 mb-3">
