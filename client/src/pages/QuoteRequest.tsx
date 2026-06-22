@@ -4,7 +4,6 @@ import AddressSearch from "@/components/AddressSearch";
 import CategorySelect from "@/components/CategorySelect";
 import RegionSelect from "@/components/RegionSelect";
 import PartnerAvatar from "@/components/PartnerAvatar";
-import PartnerPickerDialog from "@/components/PartnerPickerDialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -45,7 +44,6 @@ export default function QuoteRequest() {
   );
   const [designatedPartnerId, setDesignatedPartnerId] = useState<number | null>(urlPartnerId);
   const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const [region, setRegion] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -183,14 +181,7 @@ export default function QuoteRequest() {
                 <CardTitle className="text-lg">견적 의뢰</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* 1. 카테고리 / 세부 분야 먼저 선택 */}
-                <CategorySelect
-                  value={categoryId}
-                  onChange={setCategoryId}
-                  label="카테고리"
-                />
-
-                {/* 2. 견적 유형 선택 */}
+                {/* 1. 견적 유형 먼저 선택 */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">견적 유형</Label>
                   <RadioGroup value={quoteType} onValueChange={(v) => {
@@ -214,7 +205,7 @@ export default function QuoteRequest() {
                   </RadioGroup>
                 </div>
 
-                {/* Designated Partner Info Card */}
+                {/* 지정 견적 선택 시 파트너 카드 또는 선택 안내 */}
                 {quoteType === "designated" && designatedPartner && (
                   <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -223,7 +214,7 @@ export default function QuoteRequest() {
                         variant="ghost"
                         size="sm"
                         className="h-6 px-2 text-xs text-primary hover:text-primary"
-                        onClick={() => setPartnerPickerOpen(true)}
+                        onClick={() => navigate("/find-partner")}
                       >
                         변경
                       </Button>
@@ -255,16 +246,22 @@ export default function QuoteRequest() {
                   </div>
                 )}
 
-                {/* Prompt to select partner if designated but no partner selected */}
                 {quoteType === "designated" && !designatedPartnerId && (
                   <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-center">
                     <p className="text-sm text-amber-700 mb-3">지정할 파트너를 선택해주세요</p>
-                    <Button variant="outline" size="sm" onClick={() => setPartnerPickerOpen(true)} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate("/find-partner")} className="gap-2">
                       <Building2 className="w-4 h-4" />
-                      파트너 선택
+                      파트너 찾기에서 선택
                     </Button>
                   </div>
                 )}
+
+                {/* 2. 카테고리 / 세부 분야 */}
+                <CategorySelect
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  label="카테고리"
+                />
 
                 <Button
                   onClick={() => setStep(2)}
@@ -279,15 +276,6 @@ export default function QuoteRequest() {
               </CardContent>
             </Card>
           )}
-
-          <PartnerPickerDialog
-            open={partnerPickerOpen}
-            onOpenChange={setPartnerPickerOpen}
-            onSelect={(id) => {
-              setDesignatedPartnerId(id);
-              setPartnerPickerOpen(false);
-            }}
-          />
 
           {step === 2 && (
             <Card className="border-border/50 shadow-sm">
