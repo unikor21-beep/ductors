@@ -22,20 +22,23 @@ const won = (v: string | number | null | undefined) =>
 const DECIDED = ["matched", "in_progress", "completed", "cancelled"];
 
 // ----- 리뷰 작성 모달 -----
-function ReviewModal({ quoteId, partnerId, partnerName, onClose }: { quoteId: number; partnerId: number; partnerName: string; onClose: () => void }) {
-  const utils = trpc.useUtils();
+function ReviewModal({ quoteId, partnerId, partnerName, onComplete, onClose }: {
+  quoteId: number;
+  partnerId: number;
+  partnerName: string;
+  onComplete: (args: { quoteId: number; partnerId: number; rating: number; content?: string }) => void;
+  onClose: () => void;
+}) {
   const [rating, setRating] = useState(5);
   const [hover, setHover] = useState(0);
   const [content, setContent] = useState("");
-  const create = trpc.reviews.create.useMutation({
-    onSuccess: () => {
-      toast.success("리뷰가 등록되었습니다. 감사합니다!");
-      utils.reviews.myReviewForQuote.invalidate({ quoteId });
-      utils.quotes.myQuotes.invalidate();
-      onClose();
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSubmit = () => {
+    setIsPending(true);
+    onComplete({ quoteId, partnerId, rating, content: content.trim() || undefined });
+  };
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
@@ -57,9 +60,9 @@ function ReviewModal({ quoteId, partnerId, partnerName, onClose }: { quoteId: nu
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>취소</Button>
-          <Button onClick={() => create.mutate({ quoteId, partnerId, rating, content: content.trim() || undefined })} disabled={create.isPending}>
-            {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "리뷰 등록"}
+          <Button variant="outline" onClick={onClose} disabled={isPending}>취소</Button>
+          <Button onClick={handleSubmit} disabled={isPending}>
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "리뷰 등록 및 시공 완료"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -87,7 +90,7 @@ export default function MyQuoteCard({ q }: { q: any }) {
   const onErr = (e: any) => toast.error(e.message);
   const select = trpc.quotes.selectSubmission.useMutation({ onSuccess: () => { toast.success("파트너를 선정했습니다"); refresh(); }, onError: onErr });
   const closeQuote = trpc.quotes.closeWithoutPartner.useMutation({ onSuccess: () => { toast.success("견적을 종결했습니다"); refresh(); }, onError: onErr });
-  const completeWork = trpc.quotes.completeWork.useMutation({ onSuccess: () => { toast.success("시공이 완료되었습니다"); refresh(); }, onError: onErr });
+  const completeAndReview = trpc.quotes.completeAndReview.useMutation({ onSuccess: () => { toast.success("시공이 완료되었습니다. 감사합니다!"); refresh(); }, onError: onErr });
 
   const categoryLabel = (() => {
     if (!q.categoryId || !categories) return null;
@@ -228,8 +231,8 @@ export default function MyQuoteCard({ q }: { q: any }) {
                         )}
                         {isSelected && (status === "matched" || status === "in_progress") && (
                           <Button className="w-full mt-3" size="sm"
-                            onClick={() => setConfirm({ title: "시공이 완료되었나요?", desc: "완료 처리 후 바로 리뷰를 작성합니다. 되돌릴 수 없습니다.", okLabel: "시공 완료", onOk: () => completeWork.mutate({ quoteId: q.id }, { onSuccess: () => setReviewWith({ partnerId: s.partnerId, name: s.partner?.companyName || "파트너" }) }) })}>
-                            시공 완료
+                            onClick={() => setReviewWith({ partnerId: s.partnerId, name: s.partner?.companyName || "파트너" })}>
+                            리뷰 작성 및 시공 완료
                           </Button>
                         )}
                         {isSelected && status === "completed" && (
@@ -263,7 +266,7 @@ export default function MyQuoteCard({ q }: { q: any }) {
       </Card>
 
       {chatWith && <ChatModal quoteId={q.id} partnerId={chatWith.partnerId} myRole="customer" title={`${chatWith.name} 와의 채팅`} onClose={() => setChatWith(null)} />}
-      {reviewWith && <ReviewModal quoteId={q.id} partnerId={reviewWith.partnerId} partnerName={reviewWith.name} onClose={() => setReviewWith(null)} />}
+      {reviewWith && <ReviewModal quoteId={q.id} partnerId={reviewWith.partnerId} partnerName={reviewWith.name} onComplete={(args) => completeAndReview.mutate(args, { onSuccess: () => setReviewWith(null) })} onClose={() => setReviewWith(null)} />}
 
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
         <AlertDialogContent>

@@ -475,6 +475,48 @@ export const appRouter = router({
       // 파트너 알림은 리뷰 등록 시 [리뷰 등록] 메시지로 통합 발송됨 (별도 시공완료 메시지 없음)
       return { success: true };
     }),
+
+    // 리뷰 작성 후 시공 완료 처리 — 리뷰 제출 시 완료가 동시에 이루어짐
+    completeAndReview: protectedProcedure
+      .input(z.object({
+        quoteId: z.number(),
+        partnerId: z.number(),
+        rating: z.number().min(1).max(5),
+        content: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const quote = await db.getQuoteById(input.quoteId);
+        if (!quote || quote.customerId !== ctx.user.id)
+          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
+        if (quote.status !== "matched" && quote.status !== "in_progress")
+          throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후 시공 완료 처리할 수 있습니다" });
+
+        const selectedPartnerId = await db.getSelectedPartnerId(input.quoteId);
+        if (selectedPartnerId !== input.partnerId)
+          throw new TRPCError({ code: "BAD_REQUEST", message: "선정한 파트너에게만 리뷰를 남길 수 있습니다" });
+
+        const existing = await db.getReviewByQuote(input.quoteId, ctx.user.id);
+        if (existing)
+          throw new TRPCError({ code: "CONFLICT", message: "이미 리뷰를 작성했습니다" });
+
+        // ① 시공 완료 처리
+        await db.updateQuoteStatus(input.quoteId, "completed");
+
+        // ② 리뷰 등록
+        const id = await db.createReview({ ...input, customerId: ctx.user.id });
+
+        // ③ 파트너에게 통합 알림 (시공완료 + 별점)
+        const stars = "★".repeat(input.rating) + "☆".repeat(5 - input.rating);
+        const reviewMsg = `[리뷰 등록] 고객님이 시공 완료 처리했습니다.\n별점: ${stars} (${input.rating}/5)`
+          + (input.content?.trim() ? `\n"${input.content.trim()}"` : "");
+        await db.sendChatMessage({ quoteId: input.quoteId, partnerId: input.partnerId, senderRole: "customer", senderId: ctx.user.id, message: reviewMsg });
+
+        // ④ 파트너 등급 재평가
+        const gradeResult = await db.evaluateAndUpdatePartnerGrade(input.partnerId);
+
+        return { id, gradeChanged: gradeResult.changed, newGrade: gradeResult.newGrade };
+      }),
+
     // Admin
     listAll: adminProcedure.query(async () => db.getAllQuotes()),
   }),
