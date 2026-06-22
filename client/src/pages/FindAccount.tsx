@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { KeyRound, Loader2, ArrowRight, CheckCircle2, UserSearch } from "lucide-react";
+import { KeyRound, Loader2, ArrowRight, CheckCircle2, UserSearch, Check, X } from "lucide-react";
+import { checkPassword, isPasswordValid, PASSWORD_RULES } from "@shared/password";
 
 export default function FindAccount() {
   const params = useParams<{ tab?: string }>();
@@ -56,7 +57,7 @@ export default function FindAccount() {
   const passwordMatch = newPassword && newPassword === newPasswordConfirm;
   const handleReset = () => {
     if (!answer) { toast.error("보안 질문 답을 입력하세요"); return; }
-    if (newPassword.length < 8) { toast.error("비밀번호는 8자 이상이어야 합니다"); return; }
+    if (!isPasswordValid(newPassword)) { toast.error("비밀번호 조건을 확인해주세요 (영문·숫자·특수문자 조합, 연속·반복 금지)"); return; }
     if (!passwordMatch) { toast.error("비밀번호가 일치하지 않습니다"); return; }
     resetPassword.mutate({ username, securityAnswer: answer, newPassword });
   };
@@ -149,7 +150,19 @@ export default function FindAccount() {
                       </div>
                       <div className="pt-2 border-t border-border/40">
                         <Label className="text-sm font-medium mb-1.5 block">새 비밀번호</Label>
-                        <Input type="password" placeholder="8자 이상" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                        <Input type="password" placeholder="영문·숫자·특수문자 조합 8~20자" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                        {newPassword && (
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2">
+                            {PASSWORD_RULES.map((r) => {
+                              const ok = checkPassword(newPassword)[r.key];
+                              return (
+                                <span key={r.key} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-muted-foreground"}`}>
+                                  {ok ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} {r.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <Label className="text-sm font-medium mb-1.5 block">새 비밀번호 확인</Label>

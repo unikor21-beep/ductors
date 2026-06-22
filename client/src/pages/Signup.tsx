@@ -15,6 +15,7 @@ import { UserPlus, Check, X, Loader2, Wind } from "lucide-react";
 import { toast } from "sonner";
 import { SIGNUP_BG_DEFAULT, SETTING_KEYS } from "@shared/constants";
 import { AREA_CODES, formatMobileInput, isValidMobile, formatLandlineLocal, composeLandline } from "@shared/phone";
+import { checkPassword, isPasswordValid, PASSWORD_RULES } from "@shared/password";
 
 const SECURITY_QUESTIONS = [
   "어머니의 성함은?",
@@ -72,6 +73,8 @@ export default function Signup() {
   });
 
   const passwordMatch = form.password && form.password === form.passwordConfirm;
+  const passwordStrong = isPasswordValid(form.password);
+  const passwordChecks = checkPassword(form.password);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   // 이메일 중복 확인 (형식이 맞을 때만)
   const emailCheck = trpc.auth.checkEmail.useQuery(
@@ -86,14 +89,14 @@ export default function Signup() {
     { enabled: mobileValid, staleTime: 0 }
   );
   const phoneTaken = mobileValid && phoneCheck.data?.available === false;
-  const formValid = usernameChecked === true && passwordMatch && form.password.length >= 8
+  const formValid = usernameChecked === true && passwordMatch && passwordStrong
     && form.name && emailValid && !emailTaken && mobileValid && !phoneTaken && form.securityAnswer;
 
   const handleSubmit = () => {
     if (!canAgree) { toast.error("필수 약관에 동의해주세요"); return; }
     if (usernameChecked !== true) { toast.error("아이디 중복확인을 해주세요"); return; }
     if (!passwordMatch) { toast.error("비밀번호가 일치하지 않습니다"); return; }
-    if (form.password.length < 8) { toast.error("비밀번호는 8자 이상이어야 합니다"); return; }
+    if (!passwordStrong) { toast.error("비밀번호 조건을 확인해주세요 (영문·숫자·특수문자 조합, 연속·반복 금지)"); return; }
     if (!emailValid) { toast.error("올바른 이메일을 입력하세요"); return; }
     if (emailTaken) { toast.error("이미 가입된 이메일입니다"); return; }
     if (!isValidMobile(form.mobile)) { toast.error("휴대전화 번호를 정확히 입력하세요"); return; }
@@ -220,7 +223,19 @@ export default function Signup() {
 
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">비밀번호 *</Label>
-                  <Input type="password" placeholder="8자 이상" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  <Input type="password" placeholder="영문·숫자·특수문자 조합 8~20자" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  {form.password && (
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2">
+                      {PASSWORD_RULES.map((r) => {
+                        const ok = passwordChecks[r.key];
+                        return (
+                          <span key={r.key} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-muted-foreground"}`}>
+                            {ok ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} {r.label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">비밀번호 확인 *</Label>

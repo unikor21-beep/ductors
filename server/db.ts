@@ -612,7 +612,7 @@ export async function getChatRoomsByQuote(quoteId: number) {
   }
   // 파트너 정보 붙이기
   const rooms = [];
-  for (const [partnerId, room] of roomMap) {
+  for (const [partnerId, room] of Array.from(roomMap.entries())) {
     const [p] = await db.select().from(partners).where(eq(partners.id, partnerId));
     rooms.push({ ...room, partner: p ? { id: p.id, companyName: p.companyName, logoUrl: p.logoUrl, avgRating: p.avgRating, reviewCount: p.reviewCount } : null });
   }
@@ -633,7 +633,7 @@ export async function getChatRoomsByPartner(partnerId: number) {
     }
   }
   const rooms = [];
-  for (const [quoteId, room] of roomMap) {
+  for (const [quoteId, room] of Array.from(roomMap.entries())) {
     const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId));
     rooms.push({ ...room, quote: q ? { id: q.id, title: q.title, region: q.region } : null });
   }
@@ -1254,7 +1254,7 @@ export async function expirePoints() {
 // 지갑 설정값 조회
 export async function getWalletSettings() {
   const db = await getDb();
-  if (!db) return {};
+  if (!db) return { designatedViewPrice: 50000, publicViewPrice: 10000, monthlySubscription: 50000 };
   const rows = await db.select().from(walletSettings);
   const result: Record<string, number> = {};
   rows.forEach((r) => { result[r.settingKey] = r.settingValue; });

@@ -8,6 +8,7 @@ import * as db from "./db";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { hashPassword, verifyPassword } from "./_core/password";
+import { isPasswordValid } from "@shared/password";
 import { sdk } from "./_core/sdk";
 
 // Admin guard middleware
@@ -84,7 +85,7 @@ export const appRouter = router({
       .input(z.object({
         username: z.string().min(4, "아이디는 4자 이상").max(20, "아이디는 20자 이하")
           .regex(/^[a-zA-Z0-9_]+$/, "아이디는 영문/숫자/밑줄만 가능"),
-        password: z.string().min(8, "비밀번호는 8자 이상"),
+        password: z.string().min(8, "비밀번호는 8자 이상").refine(isPasswordValid, "영문·숫자·특수문자 조합 8~20자, 연속·반복 문자는 사용할 수 없습니다"),
         name: z.string().min(1, "이름을 입력하세요"),
         email: z.string().email("올바른 이메일 형식이 아닙니다"),
         phone: z.string().min(1, "휴대전화를 입력하세요"),
@@ -182,7 +183,7 @@ export const appRouter = router({
       .input(z.object({
         username: z.string(),
         securityAnswer: z.string(),
-        newPassword: z.string().min(8, "비밀번호는 8자 이상"),
+        newPassword: z.string().min(8, "비밀번호는 8자 이상").refine(isPasswordValid, "영문·숫자·특수문자 조합 8~20자, 연속·반복 문자는 사용할 수 없습니다"),
       }))
       .mutation(async ({ input }) => {
         const user = await db.getUserByUsername(input.username);

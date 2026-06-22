@@ -89,7 +89,7 @@ export default function AdminWalletManager() {
     const ids = filteredPartners.map((p) => p.id);
     const allChecked = ids.length > 0 && ids.every((id) => checkedPartners.includes(id));
     if (allChecked) setCheckedPartners((prev) => prev.filter((id) => !ids.includes(id)));
-    else setCheckedPartners((prev) => [...new Set([...prev, ...ids])]);
+    else setCheckedPartners((prev) => [...prev, ...ids].filter((id, i, a) => a.indexOf(id) === i));
   };
 
   // ===== 신규가입 캠페인 =====
