@@ -124,6 +124,7 @@ export default function PartnerRegister() {
     if (!form.companyName.trim()) { toast.error("업체명을 입력해주세요"); return; }
     if (!bizVerified) { toast.error("사업자 번호 인증을 완료해주세요"); return; }
     if (!form.businessLicenseUrl) { toast.error("사업자등록증을 첨부해주세요"); return; }
+    if (!addressMatchesBiz) { toast.error("사업자등록증 상의 주소와 동일한지 확인해주세요"); return; }
     // 주소를 합쳐서 전송
     const fullAddress = detailAddress
       ? `(${zonecode}) ${baseAddress}, ${detailAddress}`
@@ -421,7 +422,7 @@ export default function PartnerRegister() {
                 </p>
               </div>
 
-              <Button onClick={handleSubmit} className="w-full" disabled={register.isPending || !agreePartnerTerms}>
+              <Button onClick={handleSubmit} className="w-full" disabled={register.isPending || !agreePartnerTerms || !addressMatchesBiz}>
                 {register.isPending ? "신청 중..." : "파트너 가입 신청"}
               </Button>
             </CardContent>
