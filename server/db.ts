@@ -118,16 +118,34 @@ export async function createLocalUser(data: {
     loginMethod: "local",
     securityQuestion: data.securityQuestion,
     securityAnswerHash: data.securityAnswerHash,
+    passwordRemindAt: new Date(Date.now() + PASSWORD_REMIND_MS),
     lastSignedIn: new Date(),
   });
   return openId;
 }
 
-// 비밀번호 재설정
+// 비밀번호 변경 주기 (90일)
+export const PASSWORD_REMIND_MS = 90 * 24 * 60 * 60 * 1000;
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return r[0];
+}
+
+// 비밀번호 변경/재설정 — 변경일 기준 90일 후로 알림 재설정
 export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
   if (!db) return;
-  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  await db.update(users).set({ passwordHash, passwordRemindAt: new Date(Date.now() + PASSWORD_REMIND_MS) }).where(eq(users.id, userId));
+}
+
+// "다음에 바꾸기" — 90일 뒤 다시 알림
+export async function snoozePasswordReminder(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordRemindAt: new Date(Date.now() + PASSWORD_REMIND_MS) }).where(eq(users.id, userId));
 }
 
 // 고객 프로필 수정 (이름/이메일/전화번호)

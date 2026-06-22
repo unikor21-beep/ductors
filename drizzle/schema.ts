@@ -10,6 +10,7 @@ export const users = mysqlTable("users", {
   passwordHash: text("passwordHash"),
   securityQuestion: varchar("securityQuestion", { length: 200 }),
   securityAnswerHash: text("securityAnswerHash"),
+  passwordRemindAt: timestamp("passwordRemindAt"),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),

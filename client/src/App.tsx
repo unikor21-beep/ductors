@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import PasswordReminder from "./components/PasswordReminder";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import { lazy, Suspense } from "react";
@@ -25,6 +26,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const PartnerTerms = lazy(() => import("./pages/PartnerTerms"));
 const FindAccount = lazy(() => import("./pages/FindAccount"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 
 function LoadingFallback() {
   return (
@@ -59,6 +61,7 @@ function Router() {
         <Route path="/find-account/:tab?" component={FindAccount} />
         <Route path="/find-password" component={FindAccount} />
         <Route path="/find-id" component={FindAccount} />
+        <Route path="/change-password" component={ChangePassword} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -73,6 +76,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <PasswordReminder />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

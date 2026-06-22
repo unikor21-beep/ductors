@@ -31,6 +31,40 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
 
+    // 비밀번호 변경 알림 표시 여부 (90일 경과 + 로컬 비번 계정만)
+    passwordReminder: protectedProcedure.query(async ({ ctx }) => {
+      const u = await db.getUserById(ctx.user.id);
+      const remind = !!(u && u.passwordHash && u.passwordRemindAt && new Date() >= new Date(u.passwordRemindAt));
+      return { remind };
+    }),
+
+    // "다음에 바꾸기" — 90일 뒤 다시 알림
+    snoozePasswordReminder: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.snoozePasswordReminder(ctx.user.id);
+      return { success: true };
+    }),
+
+    // 비밀번호 변경 (현재 비밀번호 확인 후 변경)
+    changePassword: protectedProcedure
+      .input(z.object({
+        currentPassword: z.string().min(1),
+        newPassword: z.string().min(8, "비밀번호는 8자 이상").refine(isPasswordValid, "영문·숫자·특수문자 조합 8~20자, 연속·반복 문자는 사용할 수 없습니다"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const u = await db.getUserById(ctx.user.id);
+        if (!u || !u.passwordHash) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "SNS 계정은 비밀번호를 변경할 수 없습니다" });
+        }
+        const valid = await verifyPassword(input.currentPassword, u.passwordHash);
+        if (!valid) throw new TRPCError({ code: "UNAUTHORIZED", message: "현재 비밀번호가 일치하지 않습니다" });
+        if (await verifyPassword(input.newPassword, u.passwordHash)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "이전과 다른 비밀번호를 사용해 주세요" });
+        }
+        const newHash = await hashPassword(input.newPassword);
+        await db.updateUserPassword(u.id, newHash);
+        return { success: true };
+      }),
+
     // 고객 프로필 수정 (이름/이메일/전화번호)
     updateProfile: protectedProcedure
       .input(z.object({
