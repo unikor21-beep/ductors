@@ -69,6 +69,16 @@ export const appRouter = router({
         return { available: !existing };
       }),
 
+    // 이메일 중복 확인
+    checkEmail: publicProcedure
+      .input(z.object({ email: z.string() }))
+      .query(async ({ input }) => {
+        const email = input.email.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { available: true };
+        const existing = await db.getUserByEmail(email);
+        return { available: !existing };
+      }),
+
     // 자체 회원가입 (아이디 + 비밀번호)
     signup: publicProcedure
       .input(z.object({
@@ -92,6 +102,10 @@ export const appRouter = router({
         const phoneDigits = input.phone.replace(/\D/g, "");
         if (phoneDigits.length >= 10 && await db.getUserByPhoneDigits(phoneDigits)) {
           throw new TRPCError({ code: "CONFLICT", message: "이미 가입된 전화번호입니다" });
+        }
+        // 이메일 중복 확인
+        if (await db.getUserByEmail(input.email)) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 가입된 이메일입니다" });
         }
         // 비밀번호 + 보안답변 해싱
         const passwordHash = await hashPassword(input.password);

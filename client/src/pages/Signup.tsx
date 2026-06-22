@@ -73,6 +73,12 @@ export default function Signup() {
 
   const passwordMatch = form.password && form.password === form.passwordConfirm;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
+  // 이메일 중복 확인 (형식이 맞을 때만)
+  const emailCheck = trpc.auth.checkEmail.useQuery(
+    { email: form.email },
+    { enabled: emailValid, staleTime: 0 }
+  );
+  const emailTaken = emailValid && emailCheck.data?.available === false;
   const mobileValid = isValidMobile(form.mobile);
   // 휴대전화 중복 확인 (형식이 맞을 때만)
   const phoneCheck = trpc.auth.checkPhone.useQuery(
@@ -81,7 +87,7 @@ export default function Signup() {
   );
   const phoneTaken = mobileValid && phoneCheck.data?.available === false;
   const formValid = usernameChecked === true && passwordMatch && form.password.length >= 8
-    && form.name && emailValid && mobileValid && !phoneTaken && form.securityAnswer;
+    && form.name && emailValid && !emailTaken && mobileValid && !phoneTaken && form.securityAnswer;
 
   const handleSubmit = () => {
     if (!canAgree) { toast.error("필수 약관에 동의해주세요"); return; }
@@ -89,6 +95,7 @@ export default function Signup() {
     if (!passwordMatch) { toast.error("비밀번호가 일치하지 않습니다"); return; }
     if (form.password.length < 8) { toast.error("비밀번호는 8자 이상이어야 합니다"); return; }
     if (!emailValid) { toast.error("올바른 이메일을 입력하세요"); return; }
+    if (emailTaken) { toast.error("이미 가입된 이메일입니다"); return; }
     if (!isValidMobile(form.mobile)) { toast.error("휴대전화 번호를 정확히 입력하세요"); return; }
     if (phoneTaken) { toast.error("이미 가입된 전화번호입니다"); return; }
     signup.mutate({
@@ -230,6 +237,12 @@ export default function Signup() {
                   <Input type="email" placeholder="example@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                   {form.email && !emailValid && (
                     <p className="text-xs text-destructive mt-1">올바른 이메일 형식이 아닙니다 (예: name@email.com)</p>
+                  )}
+                  {emailTaken && (
+                    <p className="text-xs text-destructive mt-1">이미 가입된 이메일입니다</p>
+                  )}
+                  {emailValid && !emailTaken && emailCheck.data?.available === true && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><Check className="w-3 h-3" /> 사용 가능한 이메일입니다</p>
                   )}
                 </div>
                 <div>
