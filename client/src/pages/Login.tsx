@@ -146,7 +146,7 @@ export default function Login() {
               <div className="text-center pt-2">
                 <p className="text-sm text-muted-foreground">
                   아직 계정이 없으신가요?{" "}
-                  <Link href="/signup-local" className="text-primary font-medium hover:underline">
+                  <Link href="/signup" className="text-primary font-medium hover:underline">
                     회원가입
                   </Link>
                 </p>

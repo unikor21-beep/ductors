@@ -69,6 +69,7 @@ function BannerForm({
 }) {
   const [form, setForm] = useState<FormState>(initial);
   const [uploading, setUploading] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadImage = trpc.upload.adminUploadImage.useMutation({
     onError: (e) => toast.error(`업로드 실패: ${e.message}`),
@@ -111,10 +112,28 @@ function BannerForm({
             </button>
           </div>
         ) : (
-          <Button type="button" variant="outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
-            {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-            이미지 업로드
-          </Button>
+          <div className="space-y-2">
+            <Button type="button" variant="outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
+              {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              이미지 업로드
+            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="또는 이미지 주소(URL) 붙여넣기"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && urlInput.trim()) { setForm((f) => ({ ...f, imageUrl: urlInput.trim() })); setUrlInput(""); } }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!urlInput.trim()}
+                onClick={() => { setForm((f) => ({ ...f, imageUrl: urlInput.trim() })); setUrlInput(""); }}
+              >
+                적용
+              </Button>
+            </div>
+          </div>
         )}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       </div>
