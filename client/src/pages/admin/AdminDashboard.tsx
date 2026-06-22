@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, useLocation } from "wouter";
-import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar, Eye } from "lucide-react";
+import { BarChart3, Users, Building2, FileText, Star, Package, Loader2, ShieldAlert, ImageIcon, ExternalLink, AlertCircle, Search, Mail, Phone, MapPin, Hash, Calendar } from "lucide-react";
 import { QUOTE_STATUS_LABELS, PARTNER_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS, ROLE_LABELS, ROLE_BADGE_STYLE, loginMethodLabel, REGIONS } from "@shared/constants";
 
 const BackgroundManager = lazy(() => import("./BackgroundManager"));
@@ -297,22 +297,16 @@ export default function AdminDashboard() {
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between gap-4 mb-3">
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground">{p.companyName}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <button onClick={() => setDetailPartner(p)} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                            <Eye className="w-3.5 h-3.5" /> 신청 정보 보기
-                          </button>
+                        <h3 onClick={() => setDetailPartner(p)} className="font-semibold text-foreground hover:text-primary cursor-pointer inline-flex items-center gap-1.5">
+                          {p.companyName}
                           {p.businessLicenseUrl ? (
-                            <button onClick={() => openCert(p.businessLicenseUrl)} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                              <FileText className="w-3.5 h-3.5" /> 사업자등록증 <ExternalLink className="w-3 h-3" />
-                            </button>
+                            <span title="사업자등록증 첨부됨" className="inline-flex"><FileText className="w-4 h-4 text-primary" /></span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-500">
-                              <AlertCircle className="w-3.5 h-3.5" /> 사업자등록증 미첨부
-                            </span>
+                            <span title="사업자등록증 미첨부" className="inline-flex"><AlertCircle className="w-4 h-4 text-amber-500" /></span>
                           )}
-                        </div>
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">{p.representativeName || "-"} | {p.phone || "-"}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">사업자번호: {p.businessNumber || "-"}</p>
                       </div>
                       <Badge variant={p.status === "approved" ? "default" : "secondary"}>
                         {PARTNER_STATUS_LABELS[p.status] || p.status}
