@@ -105,9 +105,9 @@ export default function Signup() {
         <div className="grid md:grid-cols-2 min-h-[calc(100vh-4rem)]">
           {/* 왼쪽: 브랜드 이미지 패널 (데스크톱만) */}
           <div
-            className="hidden md:flex relative items-center justify-center p-12 text-white"
+            className="hidden md:flex md:sticky md:top-16 md:self-start md:h-[calc(100vh-4rem)] relative items-center justify-center p-12 text-white"
             style={{
-              backgroundImage: `linear-gradient(135deg, rgba(20,83,45,0.92), rgba(22,101,52,0.82)), url(${signupBg})`,
+              backgroundImage: `linear-gradient(135deg, rgba(20,83,45,0.86), rgba(22,101,52,0.74)), url(${signupBg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -127,8 +127,12 @@ export default function Signup() {
           </div>
 
           {/* 오른쪽: 가입 (SNS 먼저 → 폼) */}
-          <div className="flex items-center justify-center p-6 md:p-12">
+          <div className="flex items-start justify-center p-6 md:p-12">
             <div className="w-full max-w-md py-8">
+              <div className="flex justify-end mb-3 text-sm text-muted-foreground">
+                <span>이미 계정이 있으신가요?</span>
+                <Link href="/login" className="text-primary font-semibold hover:underline ml-1.5">로그인</Link>
+              </div>
               <h1 className="text-2xl font-bold mb-1">회원가입</h1>
               <p className="text-muted-foreground text-sm mb-6">SNS로 빠르게, 또는 아이디로 가입하세요</p>
 
@@ -269,11 +273,6 @@ export default function Signup() {
                   {signup.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   회원가입
                 </Button>
-
-                <p className="text-center text-sm text-muted-foreground pt-2">
-                  이미 계정이 있으신가요?{" "}
-                  <Link href="/login" className="text-primary font-medium hover:underline">로그인</Link>
-                </p>
               </div>
             </div>
           </div>

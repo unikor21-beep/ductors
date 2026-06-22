@@ -52,7 +52,7 @@ export const GRADE_COLORS: Record<string, string> = {
 };
 
 // Site settings keys for admin-managed background images
-export const SIGNUP_BG_DEFAULT = HERO_BG_DEFAULT;
+export const SIGNUP_BG_DEFAULT = "https://images.unsplash.com/photo-1615309662243-70f6df917b59?auto=format&fit=crop&w=1600&q=80";
 
 export const SETTING_KEYS = {
   HERO_BG: "hero_bg_url",
