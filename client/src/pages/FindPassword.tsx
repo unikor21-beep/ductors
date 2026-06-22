@@ -40,7 +40,7 @@ export default function FindPassword() {
   const resetPassword = trpc.auth.resetPassword.useMutation({
     onSuccess: () => {
       toast.success("비밀번호가 재설정되었습니다. 새 비밀번호로 로그인하세요");
-      navigate("/login-local");
+      navigate("/login");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -113,7 +113,7 @@ export default function FindPassword() {
               )}
 
               <p className="text-center text-sm text-muted-foreground pt-2 border-t border-border/40">
-                <Link href="/login-local" className="text-primary hover:underline">로그인으로 돌아가기</Link>
+                <Link href="/login" className="text-primary hover:underline">로그인으로 돌아가기</Link>
               </p>
             </CardContent>
           </Card>

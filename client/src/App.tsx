@@ -25,7 +25,6 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const PartnerTerms = lazy(() => import("./pages/PartnerTerms"));
 const SignupLocal = lazy(() => import("./pages/SignupLocal"));
-const LoginLocal = lazy(() => import("./pages/LoginLocal"));
 const FindPassword = lazy(() => import("./pages/FindPassword"));
 
 function LoadingFallback() {
@@ -59,7 +58,6 @@ function Router() {
         <Route path="/marketing" component={Marketing} />
         <Route path="/partner-terms" component={PartnerTerms} />
         <Route path="/signup-local" component={SignupLocal} />
-        <Route path="/login-local" component={LoginLocal} />
         <Route path="/find-password" component={FindPassword} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

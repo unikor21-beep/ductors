@@ -2,16 +2,22 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Link, useLocation } from "wouter";
-import { useEffect } from "react";
-import { LogIn } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogIn, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Login() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -19,9 +25,29 @@ export default function Login() {
     }
   }, [loading, isAuthenticated, navigate]);
 
-  const handleSocialLogin = (provider: string) => {
-    // All social logins go through Manus OAuth
-    // The provider parameter is for future direct social integration
+  // 아이디/비밀번호 로그인
+  const login = trpc.auth.login.useMutation({
+    onSuccess: (data) => {
+      toast.success("로그인되었습니다");
+      // 역할별 이동: 파트너→대시보드, 관리자→관리자, 고객→홈
+      if (data.role === "partner") {
+        window.location.href = "/dashboard";
+      } else if (data.role === "admin") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/";
+      }
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleLogin = () => {
+    if (!username || !password) { toast.error("아이디와 비밀번호를 입력하세요"); return; }
+    login.mutate({ username, password });
+  };
+
+  // SNS(소셜) 로그인 — 현재 모두 Manus OAuth 경유
+  const handleSocialLogin = (_provider: string) => {
     window.location.href = getLoginUrl();
   };
 
@@ -41,7 +67,46 @@ export default function Login() {
 
           <Card className="border-border/50 shadow-lg">
             <CardContent className="p-6 space-y-4">
-              {/* Social Login Buttons */}
+              {/* 아이디/비밀번호 로그인 (메인) */}
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">아이디</Label>
+                <Input
+                  placeholder="아이디"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-sm font-medium">비밀번호</Label>
+                  <Link href="/find-password" className="text-xs text-muted-foreground hover:underline">
+                    비밀번호를 잊으셨나요?
+                  </Link>
+                </div>
+                <Input
+                  type="password"
+                  placeholder="비밀번호"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
+              </div>
+
+              <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium" disabled={login.isPending} onClick={handleLogin}>
+                {login.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                로그인
+              </Button>
+
+              {/* 구분선 */}
+              <div className="relative my-2">
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
+                  또는
+                </span>
+              </div>
+
+              {/* SNS(소셜) 로그인 */}
               <button
                 onClick={() => handleSocialLogin("kakao")}
                 className="w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm transition-all hover:opacity-90"
@@ -77,26 +142,11 @@ export default function Login() {
                 Google로 로그인
               </button>
 
-              <div className="relative my-2">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
-                  또는
-                </span>
-              </div>
-
-              {/* 아이디 로그인 */}
-              <Link href="/login-local" className="block">
-                <Button className="w-full h-12 rounded-xl gap-2 text-sm font-medium">
-                  <LogIn className="w-4 h-4" />
-                  아이디로 로그인
-                </Button>
-              </Link>
-
-              {/* Sign Up Link */}
+              {/* 회원가입 */}
               <div className="text-center pt-2">
                 <p className="text-sm text-muted-foreground">
                   아직 계정이 없으신가요?{" "}
-                  <Link href="/signup" className="text-primary font-medium hover:underline">
+                  <Link href="/signup-local" className="text-primary font-medium hover:underline">
                     회원가입
                   </Link>
                 </p>
