@@ -89,7 +89,11 @@ export default function AdminDashboard() {
   );
 
   // 견적 필터링
-  const quoteCategoryOptions = Array.from(new Set((allQuotes || []).map((q: any) => q.categoryName).filter(Boolean))) as string[];
+  // 공사유형 필터 = 카테고리 설정의 대분류 목록 (설정 변경 시 자동 연동)
+  const quoteCategoryOptions = (allCategories || [])
+    .filter((c: any) => !c.parentId)
+    .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((c: any) => c.name) as string[];
   const filteredQuotes = (allQuotes || []).filter((q: any) =>
     (qType === "all" || q.type === qType) &&
     (qCategories.length === 0 || qCategories.includes(q.categoryName)) &&
