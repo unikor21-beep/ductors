@@ -23,7 +23,23 @@ export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenCh
   const { data: quote, isLoading } = trpc.quotes.detailForPartner.useQuery({ id: quoteId });
   const { data: allCategories } = trpc.categories.list.useQuery();
   const [showSubmitForm, setShowSubmitForm] = useState(false);
-  const [form, setForm] = useState({ amount: "", description: "", estimatedDays: 0 });
+  const [form, setForm] = useState({ amount: "", description: "", estimatedDays: "" });
+
+  // 견적 금액: 숫자만 추출 후 쉼표 포매팅
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/[^0-9]/g, "");
+    const formatted = digits ? Number(digits).toLocaleString("ko-KR") : "";
+    setForm((f) => ({ ...f, amount: formatted }));
+  };
+
+  // 제출 전 필수값 검증
+  const handleSubmit = () => {
+    if (!form.amount) { toast.error("견적 금액을 입력해주세요"); return; }
+    if (!form.estimatedDays || Number(form.estimatedDays) <= 0) { toast.error("예상 소요일을 입력해주세요"); return; }
+    if (!form.description.trim()) { toast.error("설명을 입력해주세요"); return; }
+    // 쉼표 제거 후 서버 전송
+    submitQuote.mutate({ quoteId, amount: form.amount.replace(/,/g, ""), description: form.description, estimatedDays: Number(form.estimatedDays) });
+  };
 
   // 카테고리 ID → "대분류 › 소분류" 이름 변환
   const categoryLabel = (() => {
@@ -142,18 +158,46 @@ export default function QuoteDetailModal({ quoteId, partnerId, onClose, onOpenCh
               <div className="border-t border-border pt-4 space-y-3">
                 <h4 className="font-semibold text-sm">견적 제출</h4>
                 <div>
-                  <Label className="text-sm mb-1.5 block">견적 금액</Label>
-                  <Input placeholder="예: 3,000,000" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+                  <Label className="text-sm mb-1.5 block">견적 금액 <span className="text-destructive">*</span></Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="예: 3,000,000"
+                      value={form.amount}
+                      onChange={handleAmountChange}
+                      inputMode="numeric"
+                      className="pr-7"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">원</span>
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-sm mb-1.5 block">예상 소요일</Label>
-                  <Input type="number" placeholder="일" value={form.estimatedDays || ""} onChange={(e) => setForm({ ...form, estimatedDays: Number(e.target.value) })} />
+                  <Label className="text-sm mb-1.5 block">예상 소요일 <span className="text-destructive">*</span></Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      min={1}
+                      value={form.estimatedDays}
+                      onChange={(e) => setForm((f) => ({ ...f, estimatedDays: e.target.value }))}
+                      className="pr-7"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">일</span>
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-sm mb-1.5 block">설명</Label>
-                  <Textarea placeholder="견적에 대한 상세 설명" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
+                  <Label className="text-sm mb-1.5 block">설명 <span className="text-destructive">*</span></Label>
+                  <Textarea
+                    placeholder="견적에 대한 상세 설명을 입력해주세요"
+                    value={form.description}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                    rows={3}
+                  />
                 </div>
-                <Button className="w-full" onClick={() => submitQuote.mutate({ quoteId, ...form })} disabled={submitQuote.isPending}>
+                <Button
+                  className="w-full"
+                  onClick={handleSubmit}
+                  disabled={submitQuote.isPending}
+                >
                   {submitQuote.isPending ? "제출 중..." : "견적 제출하기"}
                 </Button>
               </div>
