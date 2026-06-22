@@ -333,7 +333,7 @@ export const appRouter = router({
       await db.updateQuoteStatus(input.id, input.status);
       return { success: true };
     }),
-    // 고객: 파트너 선정 (나머지 자동 탈락 → 매칭)
+    // 고객: 파트너 선정 (나머지 자동 탈락 → 매칭) + 선정 파트너에게 알림
     selectSubmission: protectedProcedure.input(z.object({ submissionId: z.number(), quoteId: z.number() })).mutation(async ({ ctx, input }) => {
       const quote = await db.getQuoteById(input.quoteId);
       if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
@@ -342,6 +342,7 @@ export const appRouter = router({
       await db.updateSubmissionStatus(input.submissionId, "selected");
       await db.rejectOtherSubmissions(input.quoteId, input.submissionId);
       await db.updateQuoteStatus(input.quoteId, "matched");
+      await db.sendChatMessage({ quoteId: input.quoteId, partnerId: sub.partnerId, senderRole: "customer", senderId: ctx.user.id, message: "[견적 선정] 고객님이 회원님의 견적을 선정했습니다. 시공 일정을 협의해 주세요." });
       return { success: true };
     }),
     // 고객: 아무와도 진행 안 함 (종결)
@@ -352,20 +353,14 @@ export const appRouter = router({
       await db.updateQuoteStatus(input.quoteId, "cancelled");
       return { success: true };
     }),
-    // 고객: 시공 시작 (매칭 → 시공중)
-    startWork: protectedProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
-      const quote = await db.getQuoteById(input.quoteId);
-      if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
-      if (quote.status !== "matched") throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후에 시공을 시작할 수 있습니다" });
-      await db.updateQuoteStatus(input.quoteId, "in_progress");
-      return { success: true };
-    }),
-    // 고객: 시공 완료 (시공중 → 완료)
+    // 고객: 시공 완료 (매칭/시공중 → 완료) + 선정 파트너에게 알림
     completeWork: protectedProcedure.input(z.object({ quoteId: z.number() })).mutation(async ({ ctx, input }) => {
       const quote = await db.getQuoteById(input.quoteId);
       if (!quote || quote.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다" });
-      if (quote.status !== "in_progress") throw new TRPCError({ code: "BAD_REQUEST", message: "시공 중일 때 완료 처리할 수 있습니다" });
+      if (quote.status !== "matched" && quote.status !== "in_progress") throw new TRPCError({ code: "BAD_REQUEST", message: "파트너 선정 후 시공 완료 처리할 수 있습니다" });
       await db.updateQuoteStatus(input.quoteId, "completed");
+      const selectedPartnerId = await db.getSelectedPartnerId(input.quoteId);
+      if (selectedPartnerId) await db.sendChatMessage({ quoteId: input.quoteId, partnerId: selectedPartnerId, senderRole: "customer", senderId: ctx.user.id, message: "[시공 완료] 고객님이 시공 완료 처리했습니다. 이용해 주셔서 감사합니다." });
       return { success: true };
     }),
     // Admin

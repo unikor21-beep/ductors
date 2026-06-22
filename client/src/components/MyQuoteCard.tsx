@@ -87,7 +87,6 @@ export default function MyQuoteCard({ q }: { q: any }) {
   const onErr = (e: any) => toast.error(e.message);
   const select = trpc.quotes.selectSubmission.useMutation({ onSuccess: () => { toast.success("파트너를 선정했습니다"); refresh(); }, onError: onErr });
   const closeQuote = trpc.quotes.closeWithoutPartner.useMutation({ onSuccess: () => { toast.success("견적을 종결했습니다"); refresh(); }, onError: onErr });
-  const startWork = trpc.quotes.startWork.useMutation({ onSuccess: () => { toast.success("시공을 시작했습니다"); refresh(); }, onError: onErr });
   const completeWork = trpc.quotes.completeWork.useMutation({ onSuccess: () => { toast.success("시공이 완료되었습니다"); refresh(); }, onError: onErr });
 
   const categoryLabel = (() => {
@@ -219,15 +218,9 @@ export default function MyQuoteCard({ q }: { q: any }) {
                             이 파트너 선정
                           </Button>
                         )}
-                        {isSelected && status === "matched" && (
-                          <Button className="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-white" size="sm"
-                            onClick={() => setConfirm({ title: "시공을 시작할까요?", desc: "시공 중 상태로 변경됩니다.", okLabel: "시공 시작", onOk: () => startWork.mutate({ quoteId: q.id }) })}>
-                            시공 시작
-                          </Button>
-                        )}
-                        {isSelected && status === "in_progress" && (
+                        {isSelected && (status === "matched" || status === "in_progress") && (
                           <Button className="w-full mt-3" size="sm"
-                            onClick={() => setConfirm({ title: "시공이 완료되었나요?", desc: "완료 처리 후 리뷰를 작성할 수 있습니다.", okLabel: "시공 완료", onOk: () => completeWork.mutate({ quoteId: q.id }) })}>
+                            onClick={() => setConfirm({ title: "시공이 완료되었나요?", desc: "완료 처리 후 리뷰를 작성할 수 있습니다. 되돌릴 수 없습니다.", okLabel: "시공 완료", onOk: () => completeWork.mutate({ quoteId: q.id }) })}>
                             시공 완료
                           </Button>
                         )}
