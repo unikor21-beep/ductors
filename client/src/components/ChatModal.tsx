@@ -38,6 +38,7 @@ export default function ChatModal({ quoteId, partnerId, myRole, title, onClose }
       utils.quotes.myQuotes.invalidate();
       utils.quotes.submissions.invalidate({ quoteId });
       utils.chat.roomsByPartner.invalidate();
+      utils.partners.mySubmissions.invalidate();
     },
   });
   useEffect(() => {

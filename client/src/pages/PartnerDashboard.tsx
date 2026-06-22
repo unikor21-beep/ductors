@@ -17,7 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { FileText, Eye, Send, Briefcase, CreditCard, Loader2, Clock, Award, AlertCircle, Package, TrendingUp, Star, CheckCircle2, ArrowUp } from "lucide-react";
+import { FileText, Eye, Send, Briefcase, CreditCard, Loader2, Clock, Award, AlertCircle, Package, TrendingUp, Star, CheckCircle2, ArrowUp, MessageCircle } from "lucide-react";
 import { QUOTE_STATUS_LABELS, GRADE_LABELS, GRADE_COLORS } from "@shared/constants";
 import PortfolioManager from "@/components/PortfolioManager";
 
@@ -108,36 +108,66 @@ export default function PartnerDashboard() {
 
   const viewedQuoteIds = new Set((myViews || []).map((v) => v.quoteId));
 
+  // 견적ID → 내 제출(상태/미읽음/리뷰여부 포함)
+  const subByQuote = new Map<number, any>((mySubmissions || []).map((s: any) => [s.quoteId, s]));
+
+  // 파트너 거래단계 배지 (B방식: 리뷰까지 와야 '시공 완료')
+  const partnerStatusBadge = (sub: any): { label: string; cls: string; failed: boolean } | null => {
+    if (!sub) return null;
+    if (sub.status === "rejected") return { label: "매칭 실패", cls: "bg-muted text-muted-foreground border border-border", failed: true };
+    if (sub.status === "selected") {
+      const qs = sub.quote?.status;
+      if (qs === "completed" && sub.reviewed) return { label: "시공 완료", cls: "bg-primary text-primary-foreground", failed: false };
+      return { label: "매칭 성공", cls: "bg-emerald-600 text-white", failed: false };
+    }
+    return { label: "견적 제출", cls: "bg-blue-500 text-white", failed: false };
+  };
+
   // 견적 카드 렌더링 (지정/공개 공용)
   const renderQuoteCard = (q: any, isDesignated: boolean) => {
     const viewed = viewedQuoteIds.has(q.id);
+    const mine = subByQuote.get(q.id);
+    const st = partnerStatusBadge(mine);
+    const failed = !!st?.failed;
     return (
-      <Card key={q.id} className={`shadow-sm ${isDesignated ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"}`}>
+      <Card key={q.id} className={`shadow-sm ${failed ? "bg-muted/30 opacity-70" : isDesignated ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"}`}>
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 {isDesignated && <Badge className="bg-primary text-[10px]">지정</Badge>}
-                {viewed ? (
+                {viewed && !failed ? (
                   <button onClick={() => setDetailQuoteId(q.id)} className="font-semibold text-foreground hover:text-primary hover:underline text-left">
                     {q.title}
                   </button>
+                ) : failed ? (
+                  <h3 className="font-semibold text-muted-foreground">{q.title}</h3>
                 ) : (
                   <h3 className="font-semibold text-muted-foreground">*** (열람 후 확인 가능)</h3>
+                )}
+                {mine && mine.unreadCount > 0 && !failed && (
+                  <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold">{mine.unreadCount}</span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                 <span>{q.region || "미지정"}</span>
                 <span>{new Date(q.createdAt).toLocaleDateString("ko-KR")}</span>
-                {!viewed && <Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge>}
+                {st && <Badge className={`${st.cls} text-[11px]`}>{st.label}</Badge>}
+                {!viewed && !st && <Badge variant="secondary">{QUOTE_STATUS_LABELS[q.status] || q.status}</Badge>}
               </div>
-              {viewed && q.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{q.description}</p>}
-              {!viewed && isDesignated && <p className="text-xs text-primary mt-2">고객이 회원님을 지정하여 요청한 견적입니다.</p>}
+              {viewed && !failed && q.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{q.description}</p>}
+              {!viewed && isDesignated && !failed && <p className="text-xs text-primary mt-2">고객이 회원님을 지정하여 요청한 견적입니다.</p>}
+              {failed && <p className="text-xs text-muted-foreground mt-2">고객이 다른 파트너를 선정했거나 견적이 종결되어 더 이상 진행할 수 없습니다.</p>}
             </div>
             <div className="flex gap-2 shrink-0 items-center">
-              {!viewed ? (
+              {failed ? null : !viewed ? (
                 <Button size="sm" variant="outline" onClick={() => viewQuote.mutate({ quoteId: q.id })} disabled={viewQuote.isPending}>
                   <Eye className="w-4 h-4 mr-1" /> 열람
+                </Button>
+              ) : mine ? (
+                <Button size="sm" variant="outline" className="relative gap-1.5" onClick={() => setChatRoom({ quoteId: q.id, partnerId: partner.id })}>
+                  <MessageCircle className="w-4 h-4" />채팅
+                  {mine.unreadCount > 0 && <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold">{mine.unreadCount}</span>}
                 </Button>
               ) : (
                 <span className="text-sm font-medium text-primary px-2">열람 가능</span>
@@ -337,19 +367,46 @@ export default function PartnerDashboard() {
               {!mySubmissions || mySubmissions.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">제출한 견적이 없습니다</div>
               ) : (
-                mySubmissions.map((s) => (
-                  <Card key={s.id} className="border-border/50 shadow-sm">
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-foreground">견적 #{s.quoteId}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">금액: {s.amount || "미정"} | 소요일: {s.estimatedDays || "-"}일</p>
+                mySubmissions.map((s: any) => {
+                  const st = partnerStatusBadge(s);
+                  const failed = !!st?.failed;
+                  const q = s.quote;
+                  return (
+                    <Card key={s.id} className={`shadow-sm ${failed ? "bg-muted/30 opacity-70 border-border/40" : "border-border/50"}`}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              {failed ? (
+                                <h3 className="font-semibold text-muted-foreground truncate">{q?.title || `견적 #${s.quoteId}`}</h3>
+                              ) : (
+                                <button onClick={() => setDetailQuoteId(s.quoteId)} className="font-semibold text-foreground hover:text-primary hover:underline text-left truncate">{q?.title || `견적 #${s.quoteId}`}</button>
+                              )}
+                              {!failed && s.unreadCount > 0 && (
+                                <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold">{s.unreadCount}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                              <span>{q?.region || "-"}</span>
+                              <span>제출 {new Date(s.createdAt).toLocaleDateString("ko-KR")}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">금액: {s.amount ? `${Number(s.amount).toLocaleString("ko-KR")}원` : "미정"} · 소요 {s.estimatedDays || "-"}일</p>
+                            {failed && <p className="text-xs text-muted-foreground mt-2">고객이 다른 파트너를 선정했거나 견적이 종결되어 더 이상 진행할 수 없습니다.</p>}
+                          </div>
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            {st && <Badge className={`${st.cls} text-[11px]`}>{st.label}</Badge>}
+                            {!failed && (
+                              <Button size="sm" variant="outline" className="relative gap-1.5" onClick={() => setChatRoom({ quoteId: s.quoteId, partnerId: partner.id })}>
+                                <MessageCircle className="w-4 h-4" />채팅
+                                {s.unreadCount > 0 && <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold">{s.unreadCount}</span>}
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <Badge variant={s.status === "selected" ? "default" : "secondary"}>{s.status === "selected" ? "선정됨" : "대기 중"}</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </TabsContent>
 

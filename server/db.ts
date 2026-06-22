@@ -594,7 +594,43 @@ export async function getChatRoomsByPartner(partnerId: number) {
 export async function getSubmissionsByPartner(partnerId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(quoteSubmissions).where(eq(quoteSubmissions.partnerId, partnerId)).orderBy(desc(quoteSubmissions.createdAt));
+  const subs = await db.select({
+    id: quoteSubmissions.id,
+    quoteId: quoteSubmissions.quoteId,
+    partnerId: quoteSubmissions.partnerId,
+    amount: quoteSubmissions.amount,
+    description: quoteSubmissions.description,
+    estimatedDays: quoteSubmissions.estimatedDays,
+    status: quoteSubmissions.status,
+    createdAt: quoteSubmissions.createdAt,
+  }).from(quoteSubmissions).where(eq(quoteSubmissions.partnerId, partnerId)).orderBy(desc(quoteSubmissions.createdAt));
+  if (subs.length === 0) return [];
+  const quoteIds = subs.map((s) => s.quoteId);
+  // 견적 기본 정보
+  const qs = await db.select({
+    id: quotes.id, title: quotes.title, region: quotes.region,
+    status: quotes.status, type: quotes.type, createdAt: quotes.createdAt,
+  }).from(quotes).where(inArray(quotes.id, quoteIds));
+  const qMap = new Map(qs.map((q) => [q.id, q]));
+  // 미읽음(고객→파트너) 메시지 수
+  const unreadRows = await db.select({ quoteId: chatMessages.quoteId, cnt: sql<number>`count(*)` })
+    .from(chatMessages).where(and(
+      inArray(chatMessages.quoteId, quoteIds),
+      eq(chatMessages.partnerId, partnerId),
+      eq(chatMessages.senderRole, "customer"),
+      eq(chatMessages.isRead, false),
+    )).groupBy(chatMessages.quoteId);
+  const unreadMap = new Map(unreadRows.map((r) => [r.quoteId, Number(r.cnt)]));
+  // 고객이 이 파트너에게 리뷰를 남겼는지 (B방식 '시공 완료' 표시용)
+  const revRows = await db.select({ quoteId: reviews.quoteId }).from(reviews)
+    .where(and(inArray(reviews.quoteId, quoteIds), eq(reviews.partnerId, partnerId)));
+  const reviewedIds = revRows.map((r) => r.quoteId);
+  return subs.map((s) => ({
+    ...s,
+    quote: qMap.get(s.quoteId) || null,
+    unreadCount: unreadMap.get(s.quoteId) ?? 0,
+    reviewed: reviewedIds.includes(s.quoteId),
+  }));
 }
 
 export async function updateSubmissionStatus(id: number, status: "submitted" | "selected" | "rejected") {
