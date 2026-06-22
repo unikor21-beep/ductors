@@ -178,28 +178,39 @@ export default function QuoteRequest() {
           {step === 1 && (
             <Card className="border-border/50 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg">견적 유형 선택</CardTitle>
+                <CardTitle className="text-lg">견적 의뢰</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <RadioGroup value={quoteType} onValueChange={(v) => {
-                  setQuoteType(v as "public" | "designated");
-                  if (v === "public") setDesignatedPartnerId(null);
-                }}>
-                  <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${quoteType === "public" ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-primary/30"}`}>
-                    <RadioGroupItem value="public" id="public" className="mt-1" />
-                    <div>
-                      <Label htmlFor="public" className="text-base font-medium cursor-pointer">공개 견적</Label>
-                      <p className="text-sm text-muted-foreground mt-1">여러 파트너에게 견적을 받아 비교할 수 있습니다</p>
+                {/* 1. 카테고리 / 세부 분야 먼저 선택 */}
+                <CategorySelect
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  label="카테고리"
+                />
+
+                {/* 2. 견적 유형 선택 */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">견적 유형</Label>
+                  <RadioGroup value={quoteType} onValueChange={(v) => {
+                    setQuoteType(v as "public" | "designated");
+                    if (v === "public") setDesignatedPartnerId(null);
+                  }}>
+                    <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${quoteType === "public" ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-primary/30"}`}>
+                      <RadioGroupItem value="public" id="public" className="mt-1" />
+                      <div>
+                        <Label htmlFor="public" className="text-base font-medium cursor-pointer">공개 견적</Label>
+                        <p className="text-sm text-muted-foreground mt-1">여러 파트너에게 견적을 받아 비교할 수 있습니다</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${quoteType === "designated" ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-primary/30"}`}>
-                    <RadioGroupItem value="designated" id="designated" className="mt-1" />
-                    <div>
-                      <Label htmlFor="designated" className="text-base font-medium cursor-pointer">지정 견적</Label>
-                      <p className="text-sm text-muted-foreground mt-1">원하는 특정 파트너에게 직접 견적을 요청합니다</p>
+                    <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${quoteType === "designated" ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-primary/30"}`}>
+                      <RadioGroupItem value="designated" id="designated" className="mt-1" />
+                      <div>
+                        <Label htmlFor="designated" className="text-base font-medium cursor-pointer">지정 견적</Label>
+                        <p className="text-sm text-muted-foreground mt-1">원하는 특정 파트너에게 직접 견적을 요청합니다</p>
+                      </div>
                     </div>
-                  </div>
-                </RadioGroup>
+                  </RadioGroup>
+                </div>
 
                 {/* Designated Partner Info Card */}
                 {quoteType === "designated" && designatedPartner && (
@@ -242,12 +253,6 @@ export default function QuoteRequest() {
                     </Button>
                   </div>
                 )}
-
-                <CategorySelect
-                  value={categoryId}
-                  onChange={setCategoryId}
-                  label="카테고리"
-                />
 
                 <Button
                   onClick={() => setStep(2)}
